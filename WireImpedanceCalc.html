@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>线材阻抗计算工具</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333}
+.header{background:linear-gradient(135deg,#1a3a5c,#2d6a9f);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px;font-size:16px}
+.header svg{flex-shrink:0}
+.nav-tabs{display:flex;background:#fff;border-bottom:2px solid #e0e0e0;padding:0 12px;overflow-x:auto}
+.nav-tab{padding:10px 16px;cursor:pointer;font-size:13px;color:#666;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:.2s;flex-shrink:0}
+.nav-tab.active{color:#2d6a9f;border-bottom-color:#2d6a9f;font-weight:600}
+.nav-tab:hover:not(.active){color:#2d6a9f;background:#f5f9ff}
+.container{max-width:900px;margin:12px auto;padding:0 10px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.08);padding:16px;margin-bottom:12px}
+.card-title{font-size:14px;font-weight:600;color:#1a3a5c;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group label{font-size:12px;color:#555;font-weight:500}
+.form-group label span{color:#e74c3c}
+.form-group input,.form-group select{height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:15px;outline:none;width:100%}
+.form-group input:focus{border-color:#2d6a9f;box-shadow:0 0 0 2px rgba(45,106,159,.12)}
+.unit{position:relative}
+.unit::after{content:attr(data-unit);position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:#999;pointer-events:none}
+.btn-row{display:flex;gap:8px;margin-top:14px;justify-content:center;flex-wrap:wrap}
+.btn{height:36px;padding:0 20px;border:none;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;transition:.2s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-primary{background:#2d6a9f;color:#fff}.btn-primary:hover{background:#1a5276}
+.btn-success{background:#27ae60;color:#fff}.btn-success:hover{background:#1e8449}
+.btn-warning{background:#f39c12;color:#fff}.btn-warning:hover{background:#d68910}
+.btn-danger{background:#e74c3c;color:#fff}.btn-danger:hover{background:#c0392b}
+.btn-outline{background:#fff;color:#2d6a9f;border:1px solid #2d6a9f}.btn-outline:hover{background:#f0f7ff}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.result-section{margin-top:12px}
+.result-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12px}
+.result-table th,.result-table td{padding:8px 6px;text-align:center;border:1px solid #e0e0e0}
+.result-table th{background:#f7f9fc;color:#1a3a5c;font-weight:600}
+.result-table td{color:#333}
+.result-table .hl{background:#fffde7;font-weight:700;color:#e65100}
+.search-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.search-bar input{flex:1;min-width:100px;height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none}
+.search-bar input:focus{border-color:#2d6a9f}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.data-table{width:100%;border-collapse:collapse;font-size:12px;min-width:480px}
+.data-table th{background:#1a3a5c;color:#fff;padding:8px 5px;text-align:center;white-space:nowrap;position:sticky;top:0;font-size:11px}
+.data-table td{padding:7px 5px;text-align:center;border-bottom:1px solid #eee;font-size:12px}
+.data-table tbody tr:hover{background:#f0f7ff}
+.data-table tbody tr:nth-child(even){background:#fafbfc}
+.data-table tbody tr:nth-child(even):hover{background:#f0f7ff}
+.empty-tip{text-align:center;color:#aaa;padding:30px;font-size:13px}
+.toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,.88);color:#fff;padding:10px 22px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}.toast.success{background:rgba(39,174,96,.9)}.toast.error{background:rgba(231,76,60,.9)}
+.formula-note{background:#f7f9fc;border-left:3px solid #2d6a9f;padding:10px 12px;margin-top:10px;font-size:11px;color:#555;line-height:1.9;border-radius:0 6px 6px 0}
+.tool-bar{display:flex;gap:6px;flex-wrap:wrap}
+.action-btns{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.btn-sm{height:26px;padding:0 7px;font-size:11px;border:none;border-radius:5px;cursor:pointer}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;justify-content:center;align-items:center;padding:20px}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:12px;padding:20px;max-width:420px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal h3{font-size:16px;margin-bottom:10px;color:#1a3a5c}
+.modal p{font-size:13px;color:#666;margin-bottom:16px;line-height:1.5}
+.modal textarea{width:100%;border:1px solid #d0d7de;border-radius:8px;padding:10px;font-size:12px;resize:vertical;outline:none;font-family:monospace;height:160px}
+.hidden{display:none!important}
+@media(max-width:480px){
+  .form-grid{grid-template-columns:1fr 1fr}
+  .nav-tab{padding:9px 12px;font-size:12px}
+  .header{font-size:14px;padding:10px 14px}
+  .data-table{font-size:11px}
+  .data-table th,.data-table td{padding:6px 3px}
+  .btn{height:34px;padding:0 14px;font-size:13px}
+  .btn-sm{height:24px;padding:0 6px;font-size:10px}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M8 10l4-4 4 4M8 14l4 4 4-4"/></svg>
+  线材阻抗计算工具
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tab active" data-tab="calc">阻抗计算</div>
+  <div class="nav-tab" data-tab="list">阻抗列表</div>
+</div>
+
+<div class="container">
+  <!-- 计算页 -->
+  <div id="tab-calc">
+    <div class="card">
+      <div class="card-title">输入参数</div>
+      <div class="form-grid">
+        <div class="form-group"><label>线材编码 <span>*</span></label><input type="text" id="inp-code" placeholder="如：USB-C-001"></div>
+        <div class="form-group"><label>线径 <span>*</span></label><div class="unit" data-unit="mm"><input type="number" id="inp-dia" step="0.01" min="0" placeholder="0.00"></div></div>
+        <div class="form-group"><label>芯线数量 <span>*</span></label><input type="number" id="inp-core" step="1" min="1" placeholder="如：7"></div>
+        <div class="form-group"><label>线长 <span>*</span></label><div class="unit" data-unit="m"><input type="number" id="inp-len" step="0.01" min="0" placeholder="如：0.5"></div></div>
+        <div class="form-group"><label>主机端阻抗 <span>*</span></label><div class="unit" data-unit="Ω"><input type="number" id="inp-host-r" step="0.001" min="0" value="30"></div></div>
+        <div class="form-group"><label>设备端阻抗 <span>*</span></label><div class="unit" data-unit="Ω"><input type="number" id="inp-dev-r" step="0.001" min="0" value="20"></div></div>
+      </div>
+      <div class="formula-note">
+        <strong>计算公式：</strong><br>
+        截面积=(线径/2)²×3.1415×芯线数量 &nbsp;|&nbsp; 直流阻抗=17.4×线长/截面积 &nbsp;|&nbsp; 沾锡后阻抗=直流阻抗×2×1.15<br>
+        焊接主机端阻抗=主机端阻抗×1.15+沾锡后阻抗 &nbsp;|&nbsp; 焊接设备端阻抗=设备端阻抗×1.15+沾锡后阻抗<br>
+        成品阻抗=沾锡后阻抗+主机端阻抗×1.15+设备端阻抗×1.15 &nbsp;|&nbsp; 管控阻抗=成品阻抗×1.05<br><br>
+        <strong>参考阻抗值：</strong>Micro USB = 30~40Ω &nbsp;|&nbsp; Type-C = 20~25Ω
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calcImpedance()">⚡ 计算</button>
+        <button class="btn btn-success" id="btn-save" onclick="saveRecord()" disabled>💾 保存</button>
+        <button class="btn btn-warning" onclick="clearForm()">🔄 清空</button>
+      </div>
+    </div>
+
+    <div class="card result-section" id="result-card" style="display:none">
+      <div class="card-title">计算结果</div>
+      <table class="result-table">
+        <thead><tr><th>截面积(mm²)</th><th>直流阻抗(Ω)</th><th>沾锡后(Ω)</th><th>焊接主机端(Ω)</th><th>焊接设备端(Ω)</th><th>成品(Ω)</th><th class="hl">管控(Ω)</th></tr></thead>
+        <tbody id="result-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 列表页 -->
+  <div id="tab-list" style="display:none">
+    <div class="card">
+      <div class="card-title">
+        <span>阻抗列表</span>
+        <div class="tool-bar">
+          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="exportJSON()">📦 导出</button>
+          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="showImportModal()">📥 导入</button>
+          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="exportCSV()">📊 Excel</button>
+        </div>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="inp-search" placeholder="输入线材编码搜索..." oninput="renderList()">
+        <button class="btn btn-danger" style="height:36px" onclick="confirmClearAll()">🗑️ 清空</button>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead><tr><th>#</th><th>编码</th><th>沾锡后</th><th>主机端</th><th>设备端</th><th>成品</th><th>管控</th><th>备注</th><th>操作</th></tr></thead>
+          <tbody id="list-body"></tbody>
+        </table>
+        <div class="empty-tip" id="empty-tip">暂无数据，请先在「阻抗计算」页面计算并保存</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 导入弹窗 -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <h3>导入数据</h3>
+    <p style="font-size:12px;color:#888">粘贴从其他设备导出的JSON数据</p>
+    <textarea id="inp-import-data" placeholder='[{"code":"USB-C-001","tinR":12,...}]'></textarea>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-primary" style="background:#999" onclick="closeImportModal()">取消</button>
+      <button class="btn btn-success" onclick="doImport()">导入</button>
+    </div>
+  </div>
+</div>
+
+<!-- 导出弹窗（复制用） -->
+<div class="modal-overlay" id="modal-export">
+  <div class="modal">
+    <h3>导出数据</h3>
+    <p style="font-size:12px;color:#888">复制下方内容，发送给对方后对方点击「导入」粘贴</p>
+    <textarea id="inp-export-data" readonly></textarea>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-outline" onclick="copyExportData()">📋 复制</button>
+      <button class="btn btn-primary" style="background:#999" onclick="closeExportModal()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 确认弹窗 -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal">
+    <h3 id="modal-title">确认操作</h3>
+    <p id="modal-msg"></p>
+    <div class="btn-row">
+      <button class="btn btn-primary" style="background:#999" onclick="closeModal()">取消</button>
+      <button class="btn btn-danger" id="modal-ok" onclick="modalConfirmAction()">确认</button>
+    </div>
+  </div>
+</div>
+
+<!-- 备注弹窗 -->
+<div class="modal-overlay" id="modal-note">
+  <div class="modal">
+    <h3>编辑备注</h3>
+    <textarea id="inp-note" style="margin-bottom:12px;font-family:inherit;height:70px"></textarea>
+    <div class="btn-row">
+      <button class="btn btn-primary" style="background:#999" onclick="closeNoteModal()">取消</button>
+      <button class="btn btn-success" onclick="saveNote()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 数据存储（内存优先，尝试localStorage持久化） =====
+let store = [];
+let STORAGE_KEY = 'wire_imp_v3';
+
+function initStorage(){
+  try{
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if(saved){ store = JSON.parse(saved); }
+  }catch(e){}
+}
+function loadData(){ return store; }
+function saveStore(){
+  store = loadData();
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }catch(e){}
+}
+
+// ===== 页面切换 =====
+document.querySelectorAll('.nav-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-calc').style.display='none';
+    document.getElementById('tab-list').style.display='none';
+    tab.classList.add('active');
+    document.getElementById('tab-'+tab.dataset.tab).style.display='block';
+    if(tab.dataset.tab==='list') renderList();
+  });
+});
+
+// ===== 计算逻辑 =====
+function calcImpedance(){
+  const code=document.getElementById('inp-code').value.trim();
+  const dia=parseFloat(document.getElementById('inp-dia').value);
+  const core=parseInt(document.getElementById('inp-core').value);
+  const len=parseFloat(document.getElementById('inp-len').value);
+  const hostR=parseFloat(document.getElementById('inp-host-r').value);
+  const devR=parseFloat(document.getElementById('inp-dev-r').value);
+
+  if(!code){toast('请输入线材编码','error');return}
+  if(isNaN(dia)||dia<=0){toast('请输入有效线径','error');return}
+  if(isNaN(core)||core<=0){toast('请输入有效芯线数量','error');return}
+  if(isNaN(len)||len<=0){toast('请输入有效线长','error');return}
+  if(isNaN(hostR)||hostR<0){toast('请输入有效主机端阻抗','error');return}
+  if(isNaN(devR)||devR<0){toast('请输入有效设备端阻抗','error');return}
+
+  const area=(dia/2)*(dia/2)*3.1415*core;
+  const dcR=17.4*len/area;
+  const tinR=Math.round(dcR*2*1.15);
+  const hostWeldR=Math.round(hostR*1.15+tinR);
+  const devWeldR=Math.round(devR*1.15+tinR);
+  const finalR=Math.round(tinR+hostR*1.15+devR*1.15);
+  const controlR=Math.round(finalR*1.05);
+
+  window._cache={code,dia,core,len,hostR,devR,tinR,hostWeldR,devWeldR,finalR,controlR};
+
+  document.getElementById('result-body').innerHTML=`<tr>
+    <td>${area.toFixed(4)}</td>
+    <td>${Math.round(dcR)}</td>
+    <td>${tinR}</td>
+    <td>${hostWeldR}</td>
+    <td>${devWeldR}</td>
+    <td>${finalR}</td>
+    <td class="hl">${controlR}</td>
+  </tr>`;
+  document.getElementById('result-card').style.display='block';
+  document.getElementById('btn-save').disabled=false;
+}
+
+// ===== 保存 =====
+function saveRecord(){
+  if(!window._cache)return;
+  const c=window._cache;
+  const list=loadData();
+  const idx=list.findIndex(d=>d.code===c.code);
+  const rec={code:c.code,tinR:c.tinR,hostWeldR:c.hostWeldR,devWeldR:c.devWeldR,finalR:c.finalR,controlR:c.controlR,note:'',createdAt:today()};
+  if(idx>=0){rec.note=list[idx].note;list[idx]=rec;toast('已更新：'+c.code,'success')}
+  else{list.push(rec);toast('已保存：'+c.code,'success')}
+  saveStore();
+  document.getElementById('btn-save').disabled=true;
+}
+
+// ===== 清空表单 =====
+function clearForm(){
+  ['inp-code','inp-dia','inp-core','inp-len','inp-host-r','inp-dev-r'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('inp-host-r').value='30';
+  document.getElementById('inp-dev-r').value='20';
+  document.getElementById('result-card').style.display='none';
+  document.getElementById('btn-save').disabled=true;
+  window._cache=null;
+}
+
+// ===== 渲染列表 =====
+function renderList(){
+  const data=loadData();
+  const kw=document.getElementById('inp-search').value.trim().toLowerCase();
+  const filtered=kw?data.filter(d=>d.code.toLowerCase().includes(kw)):data;
+  const tbody=document.getElementById('list-body');
+  const empty=document.getElementById('empty-tip');
+  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return}
+  empty.style.display='none';
+  tbody.innerHTML=filtered.map((d,i)=>{
+    const ri=data.indexOf(d);
+    return`<tr>
+      <td>${i+1}</td><td><strong>${esc(d.code)}</strong></td>
+      <td>${d.tinR}</td><td>${d.hostWeldR}</td><td>${d.devWeldR}</td>
+      <td>${d.finalR}</td><td class="hl">${d.controlR}</td>
+      <td title="${esc(d.note||'')}">${esc((d.note||'').slice(0,12))}${(d.note||'').length>12?'…':''}</td>
+      <td><div class="action-btns">
+        <button class="btn-sm" style="background:#e3f2fd;color:#1565c0" onclick="editNote(${ri})">备注</button>
+        <button class="btn-sm" style="background:#ffebee;color:#c62828" onclick="delRecord(${ri})">删除</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+// ===== 备注 =====
+let _noteIdx=null;
+function editNote(i){_noteIdx=i;document.getElementById('inp-note').value=loadData()[i].note||'';document.getElementById('modal-note').classList.add('show')}
+function closeNoteModal(){document.getElementById('modal-note').classList.remove('show');_noteIdx=null}
+function saveNote(){if(_noteIdx===null)return;const d=loadData();d[_noteIdx].note=document.getElementById('inp-note').value.trim();saveStore();closeNoteModal();renderList();toast('备注已更新','success')}
+
+// ===== 删除 =====
+function delRecord(i){
+  const d=loadData(),item=d[i];
+  showModal('确认删除',`确定删除「${item.code}」？`,()=>{d.splice(i,1);saveStore();renderList();toast('已删除：'+item.code,'success')});
+}
+function confirmClearAll(){
+  const d=loadData();
+  if(!d.length){toast('列表已为空','error');return}
+  showModal('清空全部',`确定清空全部 ${d.length} 条记录？`,()=>{saveStore([]);renderList();toast('已全部清空','success')});
+}
+function saveStore(arr){store=arr||loadData();try{localStorage.setItem(STORAGE_KEY,JSON.stringify(store))}catch(e){}}
+
+// ===== 导入/导出 =====
+function exportJSON(){
+  const data=loadData();
+  if(!data.length){toast('暂无数据','error');return}
+  document.getElementById('inp-export-data').value=JSON.stringify(data,null,2);
+  document.getElementById('modal-export').classList.add('show');
+}
+function showImportModal(){document.getElementById('inp-import-data').value='';document.getElementById('modal-import').classList.add('show')}
+function closeImportModal(){document.getElementById('modal-import').classList.remove('show')}
+function doImport(){
+  const raw=document.getElementById('inp-import-data').value.trim();
+  if(!raw){toast('请先粘贴数据','error');return}
+  try{
+    const imported=JSON.parse(raw);
+    if(!Array.isArray(imported)){toast('格式错误，需为JSON数组','error');return}
+    const existing=loadData();
+    let merged=0,added=0;
+    imported.forEach(item=>{
+      const ex=existing.findIndex(d=>d.code===item.code);
+      if(ex>=0){existing[ex]={...existing[ex],...item};merged++}
+      else{existing.push(item);added++}
+    });
+    saveStore(existing);
+    closeImportModal();renderList();
+    toast(`导入完成：新增${added}条 更新${merged}条`,'success');
+  }catch(e){toast('解析失败，请检查数据格式','error')}
+}
+function copyExportData(){
+  const el=document.getElementById('inp-export-data');
+  el.select();
+  try{navigator.clipboard.writeText(el.value).then(()=>toast('已复制到剪贴板','success'));el.setSelectionRange(0,99999)}
+  catch(e){document.execCommand('copy');toast('已复制','success')}
+}
+function closeExportModal(){document.getElementById('modal-export').classList.remove('show')}
+
+function exportCSV(){
+  const data=loadData();
+  if(!data.length){toast('暂无数据','error');return}
+  const BOM='\uFEFF';
+  const header='序号,线材编码,沾锡后阻抗(Ω),焊接主机端阻抗(Ω),焊接设备端阻抗(Ω),成品阻抗(Ω),管控阻抗(Ω),备注,创建日期\n';
+  const rows=data.map((d,i)=>`${i+1},"${d.code}",${d.tinR},${d.hostWeldR},${d.devWeldR},${d.finalR},${d.controlR},"${(d.note||'').replace(/"/g,'""')}",${d.createdAt||today()}`).join('\n')+'\n';
+  const blob=new Blob([BOM+header+rows],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');a.href=url;a.download=`阻抗列表_${today()}.csv`;
+  a.click();URL.revokeObjectURL(url);
+  toast(`已导出 ${data.length} 条`,'success');
+}
+
+// ===== 弹窗工具 =====
+let _pendingAction=null;
+function showModal(t,m,a){document.getElementById('modal-title').textContent=t;document.getElementById('modal-msg').textContent=m;_pendingAction=a;document.getElementById('modal-confirm').classList.add('show')}
+function closeModal(){document.getElementById('modal-confirm').classList.remove('show');_pendingAction=null}
+function modalConfirmAction(){if(_pendingAction)_pendingAction();closeModal()}
+function toast(m,t=''){const e=document.getElementById('toast');e.textContent=m;e.className='toast show '+t;setTimeout(()=>e.classList.remove('show'),2200)}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+function today(){return new Date().toISOString().slice(0,10)}
+
+// ===== 初始化 =====
+initStorage();
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&e.ctrlKey)calcImpedance();
+  if(e.key==='Escape'){closeModal();closeNoteModal();closeImportModal();closeExportModal()}
+});
+
+// iOS: 防止双击缩放导致的输入框聚焦丢失
+document.addEventListener('touchstart',function(e){}, {passive:true});
+</script>
+</body>
+</html>
