@@ -464,7 +464,9 @@ function closePasswordModal() {
 
 function confirmPasswordAction() {
   const input = document.getElementById('inp-password').value.trim();
+  console.log('confirmPasswordAction called, input:', input, 'expected:', getPassword());
   if (input === getPassword()) {
+    console.log('password match, executing action');
     closePasswordModal();
     if (_pendingPasswordAction) _pendingPasswordAction();
   } else {
@@ -501,9 +503,13 @@ function saveNote() {
 
 // ===== 删除 =====
 function delRecord(i) {
+  console.log('delRecord called with index:', i);
   const d = loadData(), item = d[i];
+  console.log('item to delete:', item);
   requestPassword(() => {
+    console.log('password confirmed, deleting:', item.code);
     showModal('确认删除', `确定删除「${item.code}」？`, () => {
+      console.log('confirming deletion');
       d.splice(i, 1);
       saveStore();
       renderList();
