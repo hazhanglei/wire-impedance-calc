@@ -95,15 +95,15 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
         <div class="form-group"><label>线径 <span>*</span></label><div class="unit" data-unit="mm"><input type="number" id="inp-dia" step="0.01" min="0" placeholder="0.00"></div></div>
         <div class="form-group"><label>芯线数量 <span>*</span></label><input type="number" id="inp-core" step="1" min="1" placeholder="如：7"></div>
         <div class="form-group"><label>线长 <span>*</span></label><div class="unit" data-unit="m"><input type="number" id="inp-len" step="0.01" min="0" placeholder="如：0.5"></div></div>
-        <div class="form-group"><label>主机端阻抗 <span>*</span></label><div class="unit" data-unit="Ω"><input type="number" id="inp-host-r" step="0.001" min="0" value="30"></div></div>
-        <div class="form-group"><label>设备端阻抗 <span>*</span></label><div class="unit" data-unit="Ω"><input type="number" id="inp-dev-r" step="0.001" min="0" value="20"></div></div>
+        <div class="form-group"><label>主机端阻抗 <span>*</span></label><div class="unit" data-unit="mΩ"><input type="number" id="inp-host-r" step="1" min="0" value="35000" placeholder="如：35000"></div></div>
+        <div class="form-group"><label>设备端阻抗 <span>*</span></label><div class="unit" data-unit="mΩ"><input type="number" id="inp-dev-r" step="1" min="0" value="22000" placeholder="如：22000"></div></div>
       </div>
       <div class="formula-note">
         <strong>计算公式：</strong><br>
         截面积=(线径/2)²×3.1415×芯线数量 &nbsp;|&nbsp; 直流阻抗=17.4×线长/截面积 &nbsp;|&nbsp; 沾锡后阻抗=直流阻抗×2×1.15<br>
         焊接主机端阻抗=主机端阻抗×1.15+沾锡后阻抗 &nbsp;|&nbsp; 焊接设备端阻抗=设备端阻抗×1.15+沾锡后阻抗<br>
         成品阻抗=沾锡后阻抗+主机端阻抗×1.15+设备端阻抗×1.15 &nbsp;|&nbsp; 管控阻抗=成品阻抗×1.05<br><br>
-        <strong>参考阻抗值：</strong>Micro USB = 30~40Ω &nbsp;|&nbsp; Type-C = 20~25Ω
+        <strong>参考阻抗值：</strong>Micro USB = 30000~40000mΩ &nbsp;|&nbsp; Type-C = 20000~25000mΩ
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="calcImpedance()">⚡ 计算</button>
@@ -115,7 +115,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
     <div class="card result-section" id="result-card" style="display:none">
       <div class="card-title">计算结果</div>
       <table class="result-table">
-        <thead><tr><th>截面积(mm²)</th><th>直流阻抗(Ω)</th><th>沾锡后(Ω)</th><th>焊接主机端(Ω)</th><th>焊接设备端(Ω)</th><th>成品(Ω)</th><th class="hl">管控(Ω)</th></tr></thead>
+        <thead><tr><th>截面积(mm²)</th><th>直流阻抗(mΩ)</th><th>沾锡后(mΩ)</th><th>焊接主机端(mΩ)</th><th>焊接设备端(mΩ)</th><th>成品(mΩ)</th><th class="hl">管控(mΩ)</th></tr></thead>
         <tbody id="result-body"></tbody>
       </table>
     </div>
@@ -138,7 +138,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>#</th><th>编码</th><th>沾锡后</th><th>主机端</th><th>设备端</th><th>成品</th><th>管控</th><th>备注</th><th>操作</th></tr></thead>
+          <thead><tr><th>#</th><th>编码</th><th>沾锡后(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>备注</th><th>操作</th></tr></thead>
           <tbody id="list-body"></tbody>
         </table>
         <div class="empty-tip" id="empty-tip">暂无数据，请先在「阻抗计算」页面计算并保存</div>
@@ -283,8 +283,8 @@ function saveRecord(){
 // ===== 清空表单 =====
 function clearForm(){
   ['inp-code','inp-dia','inp-core','inp-len','inp-host-r','inp-dev-r'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('inp-host-r').value='30';
-  document.getElementById('inp-dev-r').value='20';
+  document.getElementById('inp-host-r').value='35000';
+  document.getElementById('inp-dev-r').value='22000';
   document.getElementById('result-card').style.display='none';
   document.getElementById('btn-save').disabled=true;
   window._cache=null;
@@ -371,7 +371,7 @@ function exportCSV(){
   const data=loadData();
   if(!data.length){toast('暂无数据','error');return}
   const BOM='\uFEFF';
-  const header='序号,线材编码,沾锡后阻抗(Ω),焊接主机端阻抗(Ω),焊接设备端阻抗(Ω),成品阻抗(Ω),管控阻抗(Ω),备注,创建日期\n';
+  const header='序号,线材编码,沾锡后阻抗(mΩ),焊接主机端阻抗(mΩ),焊接设备端阻抗(mΩ),成品阻抗(mΩ),管控阻抗(mΩ),备注,创建日期\n';
   const rows=data.map((d,i)=>`${i+1},"${d.code}",${d.tinR},${d.hostWeldR},${d.devWeldR},${d.finalR},${d.controlR},"${(d.note||'').replace(/"/g,'""')}",${d.createdAt||today()}`).join('\n')+'\n';
   const blob=new Blob([BOM+header+rows],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
