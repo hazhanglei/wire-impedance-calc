@@ -364,13 +364,19 @@ function clearForm(){
 
 // ===== 渲染列表 =====
 function renderList(){
+  console.log('renderList: called');
   const data=loadData();
+  console.log('renderList: loaded data=', data);
+  console.log('renderList: data length=', data.length);
   const kw=document.getElementById('inp-search').value.trim().toLowerCase();
+  console.log('renderList: search kw=', kw);
   const filtered=kw?data.filter(d=>d.code.toLowerCase().includes(kw)):data;
+  console.log('renderList: filtered=', filtered);
   const tbody=document.getElementById('list-body');
   const empty=document.getElementById('empty-tip');
   if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return}
   empty.style.display='none';
+  console.log('renderList: rendering', filtered.length, 'rows');
   tbody.innerHTML=filtered.map((d,i)=>{
     const ri=data.indexOf(d);
     return`<tr>
@@ -385,6 +391,7 @@ function renderList(){
       </div></td>
     </tr>`;
   }).join('');
+  console.log('renderList: done');
 }
 
 // ===== 密码验证 =====
