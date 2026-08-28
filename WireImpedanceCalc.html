@@ -248,8 +248,9 @@ function initStorage(){
   }catch(e){}
 }
 function loadData(){ return store; }
-function saveStore(){
-  store = loadData();
+function saveStore(arr){
+  if(arr !== undefined) store = arr;
+  else store = loadData();
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }catch(e){}
 }
 
@@ -310,27 +311,25 @@ function saveRecord(){
   const code=document.getElementById('inp-code').value.trim();
   if(!code){toast('请输入线材编码后再保存','error');return}
   
-  requestPassword(()=>{
-    const list=loadData();
-    const idx=list.findIndex(d=>d.code===c.code);
-    const rec={code:code,tinR:c.tinR,hostWeldR:c.hostWeldR,devWeldR:c.devWeldR,finalR:c.finalR,controlR:c.controlR,note:'',createdAt:today()};
-    
-    if(idx>=0){
-      // 重复编码，询问是否替换
-      showModal('编码已存在',`线材编码「${code}」已存在于列表中。是否删除原记录并保存新记录？`,()=>{
-        list.splice(idx,1);
-        list.push(rec);
-        saveStore();
-        document.getElementById('btn-save').disabled=true;
-        toast('已替换：'+code,'success');
-      });
-    } else {
+  const list=loadData();
+  const idx=list.findIndex(d=>d.code===c.code);
+  const rec={code:code,tinR:c.tinR,hostWeldR:c.hostWeldR,devWeldR:c.devWeldR,finalR:c.finalR,controlR:c.controlR,note:'',createdAt:today()};
+  
+  if(idx>=0){
+    // 重复编码，询问是否替换
+    showModal('编码已存在',`线材编码「${code}」已存在于列表中。是否删除原记录并保存新记录？`,()=>{
+      list.splice(idx,1);
       list.push(rec);
       saveStore();
       document.getElementById('btn-save').disabled=true;
-      toast('已保存：'+code,'success');
-    }
-  });
+      toast('已替换：'+code,'success');
+    });
+  } else {
+    list.push(rec);
+    saveStore();
+    document.getElementById('btn-save').disabled=true;
+    toast('已保存：'+code,'success');
+  }
 }
 
 // ===== 清空表单 =====
@@ -503,7 +502,6 @@ function confirmClearAll(){
   if(!d.length){toast('列表已为空','error');return}
   showModal('清空全部',`确定清空全部 ${d.length} 条记录？`,()=>{saveStore([]);renderList();toast('已全部清空','success')});
 }
-function saveStore(arr){store=arr||loadData();try{localStorage.setItem(STORAGE_KEY,JSON.stringify(store))}catch(e){}}
 
 // ===== 导入/导出 =====
 function exportJSON(){
