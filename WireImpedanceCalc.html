@@ -139,7 +139,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>#</th><th>编码</th><th>沾锡后(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>备注</th><th>操作</th></tr></thead>
+          <thead><tr><th>#</th><th>编码</th><th>线径</th><th>芯数</th><th>线长</th><th>截面积</th><th>沾锡后(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>备注</th><th>操作</th></tr></thead>
           <tbody id="list-body"></tbody>
         </table>
         <div class="empty-tip" id="empty-tip">暂无数据，请先在「阻抗计算」页面计算并保存</div>
@@ -289,7 +289,7 @@ function calcImpedance(){
   const finalR=Math.round(tinR+hostR*1.15+devR*1.15);
   const controlR=Math.round(finalR*1.05);
 
-  window._cache={code,dia,core,len,hostR,devR,tinR,hostWeldR,devWeldR,finalR,controlR};
+  window._cache={code,dia,core,len,hostR,devR,area,tinR,hostWeldR,devWeldR,finalR,controlR};
 
   document.getElementById('result-body').innerHTML=`<tr>
     <td>${area.toFixed(4)}</td>
@@ -313,7 +313,20 @@ function saveRecord(){
   
   const list=loadData();
   const idx=list.findIndex(d=>d.code===c.code);
-  const rec={code:code,tinR:c.tinR,hostWeldR:c.hostWeldR,devWeldR:c.devWeldR,finalR:c.finalR,controlR:c.controlR,note:'',createdAt:today()};
+  const rec={
+    code:code,
+    dia:c.dia,
+    core:c.core,
+    len:c.len,
+    area:c.area,
+    tinR:c.tinR,
+    hostWeldR:c.hostWeldR,
+    devWeldR:c.devWeldR,
+    finalR:c.finalR,
+    controlR:c.controlR,
+    note:'',
+    createdAt:today()
+  };
   
   if(idx>=0){
     // 重复编码，询问是否替换
@@ -355,6 +368,7 @@ function renderList(){
     const ri=data.indexOf(d);
     return`<tr>
       <td>${i+1}</td><td><strong>${esc(d.code)}</strong></td>
+      <td>${d.dia}mm</td><td>${d.core}芯</td><td>${d.len}m</td><td>${d.area.toFixed(4)}</td>
       <td>${d.tinR}</td><td>${d.hostWeldR}</td><td>${d.devWeldR}</td>
       <td>${d.finalR}</td><td class="hl">${d.controlR}</td>
       <td title="${esc(d.note||'')}">${esc((d.note||'').slice(0,12))}${(d.note||'').length>12?'…':''}</td>
@@ -542,8 +556,8 @@ function exportCSV(){
   const data=loadData();
   if(!data.length){toast('暂无数据','error');return}
   const BOM='\uFEFF';
-  const header='序号,线材编码,沾锡后阻抗(mΩ),焊接主机端阻抗(mΩ),焊接设备端阻抗(mΩ),成品阻抗(mΩ),管控阻抗(mΩ),备注,创建日期\n';
-  const rows=data.map((d,i)=>`${i+1},"${d.code}",${d.tinR},${d.hostWeldR},${d.devWeldR},${d.finalR},${d.controlR},"${(d.note||'').replace(/"/g,'""')}",${d.createdAt||today()}`).join('\n')+'\n';
+  const header='序号,线材编码,线径(mm),芯数,线长(m),截面积(mm²),沾锡后阻抗(mΩ),焊接主机端阻抗(mΩ),焊接设备端阻抗(mΩ),成品阻抗(mΩ),管控阻抗(mΩ),备注,创建日期\n';
+  const rows=data.map((d,i)=>`${i+1},"${d.code}",${d.dia},${d.core},${d.len},${d.area.toFixed(4)},${d.tinR},${d.hostWeldR},${d.devWeldR},${d.finalR},${d.controlR},"${(d.note||'').replace(/"/g,'""')}",${d.createdAt||today()}`).join('\n')+'\n';
   const blob=new Blob([BOM+header+rows],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`阻抗列表_${today()}.csv`;
