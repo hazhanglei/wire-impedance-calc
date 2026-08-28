@@ -306,12 +306,14 @@ function calcImpedance(){
 
 // ===== 保存 =====
 function saveRecord(){
-  if(!window._cache)return;
+  if(!window._cache){console.log('saveRecord: no cache');return;}
   const c=window._cache;
   const code=document.getElementById('inp-code').value.trim();
   if(!code){toast('请输入线材编码后再保存','error');return}
   
+  console.log('saveRecord: cache=', c);
   const list=loadData();
+  console.log('saveRecord: current list=', list);
   const idx=list.findIndex(d=>d.code===c.code);
   const rec={
     code:code,
@@ -327,21 +329,26 @@ function saveRecord(){
     note:'',
     createdAt:today()
   };
+  console.log('saveRecord: new record=', rec);
   
   if(idx>=0){
     // 重复编码，询问是否替换
     showModal('编码已存在',`线材编码「${code}」已存在于列表中。是否删除原记录并保存新记录？`,()=>{
+      console.log('saveRecord: replacing record');
       list.splice(idx,1);
       list.push(rec);
       saveStore();
       document.getElementById('btn-save').disabled=true;
       toast('已替换：'+code,'success');
+      console.log('saveRecord: list after replace=', loadData());
     });
   } else {
+    console.log('saveRecord: adding new record');
     list.push(rec);
     saveStore();
     document.getElementById('btn-save').disabled=true;
     toast('已保存：'+code,'success');
+    console.log('saveRecord: list after add=', loadData());
   }
 }
 
