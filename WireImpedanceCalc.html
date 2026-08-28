@@ -468,7 +468,12 @@ function confirmPasswordAction() {
   if (input === getPassword()) {
     console.log('password match, executing action');
     closePasswordModal();
-    if (_pendingPasswordAction) _pendingPasswordAction();
+    if (_pendingPasswordAction) {
+      console.log('executing pending action');
+      _pendingPasswordAction();
+    } else {
+      console.log('no pending action!');
+    }
   } else {
     toast('密码错误', 'error');
     document.getElementById('inp-password').value = '';
@@ -507,7 +512,7 @@ function delRecord(i) {
   const d = loadData(), item = d[i];
   console.log('item to delete:', item);
   requestPassword(() => {
-    console.log('password confirmed, deleting:', item.code);
+    console.log('password confirmed, showing confirm dialog');
     showModal('确认删除', `确定删除「${item.code}」？`, () => {
       console.log('confirming deletion');
       d.splice(i, 1);
