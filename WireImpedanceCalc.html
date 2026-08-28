@@ -139,7 +139,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>#</th><th>编码</th><th>线径</th><th>芯数</th><th>线长</th><th>截面积</th><th>沾锡后(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>备注</th><th>操作</th></tr></thead>
+          <thead><tr><th>#</th><th>编码</th><th>线径(mm)</th><th>芯数</th><th>线长(m)</th><th>截面积(mm²)</th><th>沾锡后(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>备注</th><th>操作</th></tr></thead>
           <tbody id="list-body"></tbody>
         </table>
         <div class="empty-tip" id="empty-tip">暂无数据，请先在「阻抗计算」页面计算并保存</div>
@@ -368,7 +368,7 @@ function renderList(){
     const ri=data.indexOf(d);
     return`<tr>
       <td>${i+1}</td><td><strong>${esc(d.code)}</strong></td>
-      <td>${d.dia}mm</td><td>${d.core}芯</td><td>${d.len}m</td><td>${d.area.toFixed(4)}</td>
+      <td>${d.dia}</td><td>${d.core}</td><td>${d.len}</td><td>${d.area.toFixed(4)}</td>
       <td>${d.tinR}</td><td>${d.hostWeldR}</td><td>${d.devWeldR}</td>
       <td>${d.finalR}</td><td class="hl">${d.controlR}</td>
       <td title="${esc(d.note||'')}">${esc((d.note||'').slice(0,12))}${(d.note||'').length>12?'…':''}</td>
