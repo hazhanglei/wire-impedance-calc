@@ -309,13 +309,28 @@ function saveRecord(){
   const c=window._cache;
   const code=document.getElementById('inp-code').value.trim();
   if(!code){toast('请输入线材编码后再保存','error');return}
-  const list=loadData();
-  const idx=list.findIndex(d=>d.code===c.code);
-  const rec={code:code,tinR:c.tinR,hostWeldR:c.hostWeldR,devWeldR:c.devWeldR,finalR:c.finalR,controlR:c.controlR,note:'',createdAt:today()};
-  if(idx>=0){rec.note=list[idx].note;list[idx]=rec;toast('已更新：'+c.code,'success')}
-  else{list.push(rec);toast('已保存：'+c.code,'success')}
-  saveStore();
-  document.getElementById('btn-save').disabled=true;
+  
+  requestPassword(()=>{
+    const list=loadData();
+    const idx=list.findIndex(d=>d.code===c.code);
+    const rec={code:code,tinR:c.tinR,hostWeldR:c.hostWeldR,devWeldR:c.devWeldR,finalR:c.finalR,controlR:c.controlR,note:'',createdAt:today()};
+    
+    if(idx>=0){
+      // 重复编码，询问是否替换
+      showModal('编码已存在',`线材编码「${code}」已存在于列表中。是否删除原记录并保存新记录？`,()=>{
+        list.splice(idx,1);
+        list.push(rec);
+        saveStore();
+        document.getElementById('btn-save').disabled=true;
+        toast('已替换：'+code,'success');
+      });
+    } else {
+      list.push(rec);
+      saveStore();
+      document.getElementById('btn-save').disabled=true;
+      toast('已保存：'+code,'success');
+    }
+  });
 }
 
 // ===== 清空表单 =====
