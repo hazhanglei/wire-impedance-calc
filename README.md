@@ -1,23 +1,40 @@
-# Wire Impedance Calculator
+# 线材阻抗计算工具 - 部署完成
 
-> 线材阻抗计算工具 - 计算公式参考：截面积=(线径/2)²×3.1415×芯数，直流阻抗=17.4×线长/截面积
+## 访问方式
 
-## 使用方式
+### 方式1：GitHub Pages（推荐）
+**网站地址：https://hazhanglei.github.io/wire-impedance-calc/**
 
-直接点击 [在线工具](https://hazhanglei.github.io/wire-impedance-calc/) 访问。
+⚠️ **需要在GitHub上手动启用Pages：**
+1. 打开 https://github.com/hazhanglei/wire-impedance-calc/settings/pages
+2. Source选择：`main` branch, `/ (root)`
+3. 点击Save
+4. 等待1-2分钟后访问上述链接
 
-数据存储于浏览器本地，刷新不丢失，清空页面或清除浏览器数据会重置。
-
-## 计算公式
-
+### 方式2：本地服务器（立即可用）
+```bash
+cd /e/Hermes/00-配置档案总库/默认配置/04-成品导出目录
+python serve_wire_calc.py
 ```
-截面积 = (线径/2)² × 3.1415 × 芯线数量
-直流阻抗 = 17.4 × 线长 / 截面积
-沾锡后阻抗 = 直流阻抗 × 2 × 1.15
-焊接主机端阻抗 = 主机端阻抗 × 1.15 + 沾锡后阻抗
-焊接设备端阻抗 = 设备端阻抗 × 1.15 + 沾锡后阻抗
-成品阻抗 = 沾锡后阻抗 + 主机端阻抗×1.15 + 设备端阻抗×1.15
-管控阻抗 = 成品阻抗 × 1.05
+手机访问：`http://<电脑IP>:8765`
+
+查看电脑IP：
+```bash
+ip addr show | grep "inet " | grep -v 127.0.0.1
 ```
 
-参考值：Micro USB 30~40Ω，Type-C 20~25Ω
+## 手机使用说明
+
+1. **GitHub Pages方式**：手机浏览器直接访问 https://hazhanglei.github.io/wire-impedance-calc/
+2. **本地服务器方式**：确保手机和电脑在同一WiFi，浏览器访问 http://<电脑IP>:8765
+
+## 数据共享
+
+由于iOS限制，使用剪贴板共享数据：
+- 导出：点击「📦 导出」→ 复制JSON
+- 导入：点击「📥 导入」→ 粘贴JSON → 确认
+
+## 文件位置
+- HTML工具：`E:\Hermes\00-配置档案总库\默认配置\04-成品导出目录\WireImpedanceCalc.html`
+- 服务器脚本：`serve_wire_calc.py`
+- GitHub仓库：https://github.com/hazhanglei/wire-impedance-calc
