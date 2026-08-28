@@ -237,7 +237,6 @@ function calcImpedance(){
   const hostR=parseFloat(document.getElementById('inp-host-r').value);
   const devR=parseFloat(document.getElementById('inp-dev-r').value);
 
-  if(!code){toast('请输入线材编码','error');return}
   if(isNaN(dia)||dia<=0){toast('请输入有效线径','error');return}
   if(isNaN(core)||core<=0){toast('请输入有效芯线数量','error');return}
   if(isNaN(len)||len<=0){toast('请输入有效线长','error');return}
@@ -271,9 +270,11 @@ function calcImpedance(){
 function saveRecord(){
   if(!window._cache)return;
   const c=window._cache;
+  const code=document.getElementById('inp-code').value.trim();
+  if(!code){toast('请输入线材编码后再保存','error');return}
   const list=loadData();
   const idx=list.findIndex(d=>d.code===c.code);
-  const rec={code:c.code,tinR:c.tinR,hostWeldR:c.hostWeldR,devWeldR:c.devWeldR,finalR:c.finalR,controlR:c.controlR,note:'',createdAt:today()};
+  const rec={code,c.tinR,hostWeldR:c.hostWeldR,devWeldR:c.devWeldR,finalR:c.finalR,controlR:c.controlR,note:'',createdAt:today()};
   if(idx>=0){rec.note=list[idx].note;list[idx]=rec;toast('已更新：'+c.code,'success')}
   else{list.push(rec);toast('已保存：'+c.code,'success')}
   saveStore();
