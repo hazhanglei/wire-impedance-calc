@@ -127,6 +127,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       <div class="card-title">
         <span>阻抗列表</span>
         <div class="tool-bar">
+          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="saveToFile()">💾 保存到本地</button>
+          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="loadFromFile()">📂 从本地加载</button>
           <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="exportJSON()">📦 导出</button>
           <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="showImportModal()">📥 导入</button>
           <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="exportCSV()">📊 Excel</button>
@@ -237,21 +239,62 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== 数据存储（内存优先，尝试localStorage持久化） =====
+// ===== 数据存储（支持多种存储方式） =====
 let store = [];
 let STORAGE_KEY = 'wire_imp_v3';
+let STORAGE_MODE = localStorage.getItem('wire_imp_storage_mode') || 'localStorage'; // localStorage | sessionStorage | cookie
+
+function setStorageMode(mode) {
+  STORAGE_MODE = mode;
+  localStorage.setItem('wire_imp_storage_mode', mode);
+  initStorage();
+  renderList();
+  toast('存储方式已切换为：' + {localStorage:'本地持久化',sessionStorage:'会话临时',cookie:'Cookie存储'}[mode], 'success');
+}
+
+function getStorageKey() {
+  return STORAGE_KEY + '_' + STORAGE_MODE;
+}
+
+function getItem(key) {
+  try {
+    if (STORAGE_MODE === 'localStorage') {
+      return localStorage.getItem(key);
+    } else if (STORAGE_MODE === 'sessionStorage') {
+      return sessionStorage.getItem(key);
+    } else if (STORAGE_MODE === 'cookie') {
+      const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
+      return match ? decodeURIComponent(match[2]) : null;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function setItem(key, value) {
+  try {
+    if (STORAGE_MODE === 'localStorage') {
+      localStorage.setItem(key, value);
+    } else if (STORAGE_MODE === 'sessionStorage') {
+      sessionStorage.setItem(key, value);
+    } else if (STORAGE_MODE === 'cookie') {
+      const expires = new Date(Date.now() + 365*24*60*60*1000).toUTCString();
+      document.cookie = key + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
+    }
+  } catch(e) {}
+}
 
 function initStorage(){
-  try{
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if(saved){ store = JSON.parse(saved); }
-  }catch(e){}
+  const saved = getItem(getStorageKey());
+  if(saved){
+    try { store = JSON.parse(saved); }
+    catch(e){ store = []; }
+  }
 }
 function loadData(){ return store; }
 function saveStore(arr){
   if(arr !== undefined) store = arr;
   else store = loadData();
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(store)); }catch(e){}
+  setItem(getStorageKey(), JSON.stringify(store));
 }
 
 // ===== 页面切换 =====
@@ -599,6 +642,55 @@ function exportCSV(){
   const a=document.createElement('a');a.href=url;a.download=`阻抗列表_${today()}.csv`;
   a.click();URL.revokeObjectURL(url);
   toast(`已导出 ${data.length} 条`,'success');
+}
+
+// ===== 本地文件保存/加载 =====
+function saveToFile(){
+  const data=loadData();
+  if(!data.length){toast('暂无数据可保存','error');return}
+  const json=JSON.stringify(data,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download=`阻抗数据_${today()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(`已保存 ${data.length} 条数据到本地`,'success');
+}
+
+function loadFromFile(){
+  const input=document.createElement('input');
+  input.type='file';
+  input.accept='.json';
+  input.onchange=e=>{
+    const file=e.target.files[0];
+    if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const data=JSON.parse(ev.target.result);
+        if(!Array.isArray(data)){toast('文件格式错误','error');return}
+        showModal('确认加载',`将加载 ${data.length} 条数据，是否合并到现有数据？`,()=>{
+          const existing=loadData();
+          let merged=0,added=0;
+          data.forEach(item=>{
+            const ex=existing.findIndex(d=>d.code===item.code);
+            if(ex>=0){existing[ex]={...existing[ex],...item};merged++}
+            else{existing.push(item);added++}
+          });
+          saveStore(existing);
+          renderList();
+          closeModal();
+          toast(`加载完成：新增${added}条 更新${merged}条`,'success');
+        });
+      }catch(err){toast('文件解析失败','error')}
+    };
+    reader.readAsText(file);
+  };
+  input.click();
 }
 
 // ===== 弹窗工具 =====
