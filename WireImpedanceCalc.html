@@ -374,10 +374,16 @@ function renderList(){
   console.log('renderList: filtered=', filtered);
   const tbody=document.getElementById('list-body');
   const empty=document.getElementById('empty-tip');
-  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return}
+  console.log('renderList: tbody exists=', !!tbody, 'empty exists=', !!empty);
+  if(!filtered.length){
+    console.log('renderList: no data, showing empty');
+    tbody.innerHTML='';
+    empty.style.display='block';
+    return;
+  }
+  console.log('renderList: showing', filtered.length, 'rows');
   empty.style.display='none';
-  console.log('renderList: rendering', filtered.length, 'rows');
-  tbody.innerHTML=filtered.map((d,i)=>{
+  const html = filtered.map((d,i)=>{
     const ri=data.indexOf(d);
     return`<tr>
       <td>${i+1}</td><td><strong>${esc(d.code)}</strong></td>
@@ -391,6 +397,10 @@ function renderList(){
       </div></td>
     </tr>`;
   }).join('');
+  console.log('renderList: generated HTML length=', html.length);
+  tbody.innerHTML = html;
+  console.log('renderList: set tbody.innerHTML');
+  console.log('renderList: tbody children count=', tbody.children.length);
   console.log('renderList: done');
 }
 
