@@ -100,9 +100,9 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       </div>
       <div class="formula-note">
         <strong>计算公式：</strong><br>
-        截面积=(线径/2)²×3.1415×芯线数量 &nbsp;|&nbsp; 直流阻抗=17.4×线长/截面积 &nbsp;|&nbsp; 沾锡后阻抗=直流阻抗×2×1.15<br>
-        焊接主机端阻抗=主机端阻抗×1.15+沾锡后阻抗 &nbsp;|&nbsp; 焊接设备端阻抗=设备端阻抗×1.15+沾锡后阻抗<br>
-        成品阻抗=沾锡后阻抗+主机端阻抗×1.15+设备端阻抗×1.15 &nbsp;|&nbsp; 管控阻抗=成品阻抗×1.05<br><br>
+        截面积=(线径/2)²×3.1415×芯线数量 &nbsp;|&nbsp; 直流阻抗=17.4×线长/截面积 &nbsp;|&nbsp; 沾锡后阻抗=直流阻抗×1.15<br>
+        焊接主机端阻抗=主机端阻抗×1.15+沾锡后阻抗×2 &nbsp;|&nbsp; 焊接设备端阻抗=设备端阻抗×1.15+沾锡后阻抗×2<br>
+        成品阻抗=沾锡后阻抗×2+主机端阻抗×1.15+设备端阻抗×1.15 &nbsp;|&nbsp; 管控阻抗=成品阻抗×1.05<br><br>
         <strong>参考阻抗值：</strong>Micro USB = 30~40mΩ &nbsp;|&nbsp; Type-C = 20~25mΩ
       </div>
       <div class="btn-row">
@@ -326,10 +326,10 @@ function calcImpedance(){
 
   const area=(dia/2)*(dia/2)*3.1415*core;
   const dcR=17.4*len/area;
-  const tinR=Math.round(dcR*2*1.15);
-  const hostWeldR=Math.round(hostR*1.15+tinR);
-  const devWeldR=Math.round(devR*1.15+tinR);
-  const finalR=Math.round(tinR+hostR*1.15+devR*1.15);
+  const tinR=Math.round(dcR*1.15);
+  const hostWeldR=Math.round(hostR*1.15+tinR*2);
+  const devWeldR=Math.round(devR*1.15+tinR*2);
+  const finalR=Math.round(tinR*2+hostR*1.15+devR*1.15);
   const controlR=Math.round(finalR*1.05);
 
   window._cache={code,dia,core,len,hostR,devR,area,tinR,hostWeldR,devWeldR,finalR,controlR};
