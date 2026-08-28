@@ -459,7 +459,7 @@ function requestPassword(action) {
 
 function closePasswordModal() {
   document.getElementById('modal-password').classList.remove('show');
-  _pendingPasswordAction = null;
+  // 注意：不在这里清空 _pendingPasswordAction，以免在回调执行前被清空
 }
 
 function confirmPasswordAction() {
@@ -467,10 +467,11 @@ function confirmPasswordAction() {
   console.log('confirmPasswordAction called, input:', input, 'expected:', getPassword());
   if (input === getPassword()) {
     console.log('password match, executing action');
+    const action = _pendingPasswordAction;
     closePasswordModal();
-    if (_pendingPasswordAction) {
+    if (action) {
       console.log('executing pending action');
-      _pendingPasswordAction();
+      action();
     } else {
       console.log('no pending action!');
     }
