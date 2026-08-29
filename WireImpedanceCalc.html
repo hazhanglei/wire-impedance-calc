@@ -243,13 +243,12 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 // ===== Supabase 配置 =====
 const SUPABASE_URL = 'https://aukfceqljzmmejcwuxjw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_cOHk8pJjCoNIChTR4f_f9g_XiKnLK8f';
-const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+// 直接使用 window.supabase（已由 CDN 加载）
+const sbClient = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
 // 检查 Supabase 是否加载成功
-if (!supabase) {
+if (!sbClient) {
   console.error('Supabase SDK 加载失败，请检查网络');
-  document.getElementById('toast').textContent = '网络错误：无法连接云端，请检查网络后刷新';
-  document.getElementById('toast').className = 'toast show error';
 }
 
 // ===== 全局状态 =====
