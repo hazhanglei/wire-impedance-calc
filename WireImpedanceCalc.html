@@ -243,7 +243,14 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 // ===== Supabase 配置 =====
 const SUPABASE_URL = 'https://aukfceqljzmmejcwuxjw.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_cOHk8pJjCoNIChTR4f_f9g_XiKnLK8f';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+
+// 检查 Supabase 是否加载成功
+if (!supabase) {
+  console.error('Supabase SDK 加载失败，请检查网络');
+  document.getElementById('toast').textContent = '网络错误：无法连接云端，请检查网络后刷新';
+  document.getElementById('toast').className = 'toast show error';
+}
 
 // ===== 全局状态 =====
 let store = [];
@@ -776,8 +783,12 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closeModal();closeNoteModal();closeImportModal();closeExportModal();closePasswordModal();closeChangePasswordModal()}
 });
 
-// 启动
-initApp();
+// 启动 - 添加错误处理
+try {
+  initApp().catch(e => console.error('Init error:', e));
+} catch(e) {
+  console.error('Init failed:', e);
+}
 
 // iOS: 防止双击缩放导致的输入框聚焦丢失
 document.addEventListener('touchstart',function(e){}, {passive:true});
