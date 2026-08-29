@@ -258,7 +258,7 @@ let _noteIdx = null;
 
 // ===== Supabase 数据操作 =====
 async function fetchFromCloud() {
-  const { data, error } = await supabase.from('wire_records').select('*').order('created_at', { ascending: false });
+  const { data, error } = await sbClient.from('wire_records').select('*').order('created_at', { ascending: false });
   if (error) {
     console.error('Fetch error:', error);
     toast('云端同步失败: ' + error.message, 'error');
@@ -268,11 +268,11 @@ async function fetchFromCloud() {
 }
 
 async function saveToCloud(record) {
-  const { data: existing } = await supabase.from('wire_records').select('id').eq('code', record.code).single();
+  const { data: existing } = await sbClient.from('wire_records').select('id').eq('code', record.code).single();
   
   if (existing) {
     // 更新
-    const { error } = await supabase.from('wire_records').update({
+    const { error } = await sbClient.from('wire_records').update({
       dia: record.dia, core: record.core, len: record.len, area: record.area,
       tin_r: record.tinR, host_weld_r: record.hostWeldR, dev_weld_r: record.devWeldR,
       final_r: record.finalR, control_r: record.controlR, note: record.note || '',
@@ -282,7 +282,7 @@ async function saveToCloud(record) {
     return { action: 'updated', id: existing.id };
   } else {
     // 插入
-    const { data: inserted, error } = await supabase.from('wire_records').insert([{
+    const { data: inserted, error } = await sbClient.from('wire_records').insert([{
       code: record.code, dia: record.dia, core: record.core, len: record.len,
       area: record.area, tin_r: record.tinR, host_weld_r: record.hostWeldR,
       dev_weld_r: record.devWeldR, final_r: record.finalR, control_r: record.controlR,
@@ -294,12 +294,12 @@ async function saveToCloud(record) {
 }
 
 async function deleteFromCloud(code) {
-  const { error } = await supabase.from('wire_records').delete().eq('code', code);
+  const { error } = await sbClient.from('wire_records').delete().eq('code', code);
   if (error) throw error;
 }
 
 async function clearAllFromCloud() {
-  const { error } = await supabase.from('wire_records').delete().neq('id', 0);
+  const { error } = await sbClient.from('wire_records').delete().neq('id', 0);
   if (error) throw error;
 }
 
@@ -595,7 +595,7 @@ async function saveNote() {
   setLocalCache(store);
   
   // 同步到云端
-  const { error } = await supabase.from('wire_records').update({
+  const { error } = await sbClient.from('wire_records').update({
     note: store[_noteIdx].note,
     updated_at: new Date().toISOString()
   }).eq('code', store[_noteIdx].code);
@@ -656,9 +656,9 @@ async function doImport(){
     let merged=0,added=0;
     for (const item of imported) {
       try {
-        const existing = await supabase.from('wire_records').select('id').eq('code', item.code).single();
+        const existing = await sbClient.from('wire_records').select('id').eq('code', item.code).single();
         if (existing.data) {
-          await supabase.from('wire_records').update({
+          await sbClient.from('wire_records').update({
             dia: item.dia, core: item.core, len: item.len, area: item.area,
             tin_r: item.tinR, host_weld_r: item.hostWeldR, dev_weld_r: item.devWeldR,
             final_r: item.finalR, control_r: item.controlR, note: item.note || '',
@@ -666,7 +666,7 @@ async function doImport(){
           }).eq('code', item.code);
           merged++;
         } else {
-          await supabase.from('wire_records').insert([{
+          await sbClient.from('wire_records').insert([{
             code: item.code, dia: item.dia, core: item.core, len: item.len,
             area: item.area, tin_r: item.tinR, host_weld_r: item.hostWeldR,
             dev_weld_r: item.devWeldR, final_r: item.finalR, control_r: item.controlR,
@@ -735,9 +735,9 @@ function loadFromFile(){
           let merged=0,added=0;
           for (const item of data) {
             try {
-              const existing = await supabase.from('wire_records').select('id').eq('code', item.code).single();
+              const existing = await sbClient.from('wire_records').select('id').eq('code', item.code).single();
               if (existing.data) {
-                await supabase.from('wire_records').update({
+                await sbClient.from('wire_records').update({
                   dia: item.dia, core: item.core, len: item.len, area: item.area,
                   tin_r: item.tinR, host_weld_r: item.hostWeldR, dev_weld_r: item.devWeldR,
                   final_r: item.finalR, control_r: item.controlR, note: item.note || '',
@@ -745,7 +745,7 @@ function loadFromFile(){
                 }).eq('code', item.code);
                 merged++;
               } else {
-                await supabase.from('wire_records').insert([{
+                await sbClient.from('wire_records').insert([{
                   code: item.code, dia: item.dia, core: item.core, len: item.len,
                   area: item.area, tin_r: item.tinR, host_weld_r: item.hostWeldR,
                   dev_weld_r: item.devWeldR, final_r: item.finalR, control_r: item.controlR,
