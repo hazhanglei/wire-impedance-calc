@@ -3,12 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>线材阻抗计算工具</title>
+<title>线材阻抗计算工具 - 云端版</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f0f2f5;color:#333}
-.header{background:linear-gradient(135deg,#1a3a5c,#2d6a9f);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px;font-size:16px}
+.header{background:linear-gradient(135deg,#1a3a5c,#2d6a9f);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:8px;font-size:16px;position:relative}
 .header svg{flex-shrink:0}
+.cloud-badge{margin-left:auto;background:rgba(255,255,255,0.2);padding:4px 10px;border-radius:20px;font-size:11px;display:flex;align-items:center;gap:4px}
+.cloud-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
 .nav-tabs{display:flex;background:#fff;border-bottom:2px solid #e0e0e0;padding:0 12px;overflow-x:auto}
 .nav-tab{padding:10px 16px;cursor:pointer;font-size:13px;color:#666;border-bottom:2px solid transparent;margin-bottom:-2px;white-space:nowrap;transition:.2s;flex-shrink:0}
 .nav-tab.active{color:#2d6a9f;border-bottom-color:#2d6a9f;font-weight:600}
@@ -62,6 +66,11 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .modal p{font-size:13px;color:#666;margin-bottom:16px;line-height:1.5}
 .modal textarea{width:100%;border:1px solid #d0d7de;border-radius:8px;padding:10px;font-size:12px;resize:vertical;outline:none;font-family:monospace;height:160px}
 .hidden{display:none!important}
+.sync-status{display:flex;align-items:center;gap:6px;font-size:11px;color:#666;margin-top:8px;justify-content:center}
+.sync-status.syncing{color:#f39c12}
+.sync-status.synced{color:#27ae60}
+.sync-status.error{color:#e74c3c}
+.loading-row td{padding:20px;text-align:center;color:#999}
 @media(max-width:480px){
   .form-grid{grid-template-columns:1fr 1fr}
   .nav-tab{padding:9px 12px;font-size:12px}
@@ -74,10 +83,10 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 </style>
 </head>
 <body>
-
 <div class="header">
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M8 10l4-4 4 4M8 14l4 4 4-4"/></svg>
-  线材阻抗计算工具
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+  <span>线材阻抗计算工具</span>
+  <div class="cloud-badge"><div class="cloud-dot"></div><span>云端同步</span></div>
 </div>
 
 <div class="nav-tabs">
@@ -100,16 +109,17 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       </div>
       <div class="formula-note">
         <strong>计算公式：</strong><br>
-        截面积=(线径/2)²×3.1415×芯线数量 &nbsp;|&nbsp; 直流阻抗=17.4×线长/截面积 &nbsp;|&nbsp; 沾锡后阻抗=直流阻抗×1.15<br>
-        焊接主机端阻抗=主机端阻抗×1.15+沾锡后阻抗×2 &nbsp;|&nbsp; 焊接设备端阻抗=设备端阻抗×1.15+沾锡后阻抗×2<br>
-        成品阻抗=沾锡后阻抗×2+主机端阻抗×1.15+设备端阻抗×1.15 &nbsp;|&nbsp; 管控阻抗=成品阻抗×1.05<br><br>
+        截面积=(线径/2)²×3.1415×芯线数量 &nbsp;|&nbsp; 直流阻抗=17.4×线长/截面积 &nbsp;|&nbsp; 线材阻抗单芯=直流阻抗×1.15<br>
+        焊接主机端阻抗=主机端阻抗×1.15+线材阻抗单芯×2 &nbsp;|&nbsp; 焊接设备端阻抗=设备端阻抗×1.15+线材阻抗单芯×2<br>
+        成品阻抗=线材阻抗单芯×2+主机端阻抗×1.15+设备端阻抗×1.15 &nbsp;|&nbsp; 管控阻抗=成品阻抗×1.05<br><br>
         <strong>参考阻抗值：</strong>Micro USB = 30~40mΩ &nbsp;|&nbsp; Type-C = 20~25mΩ
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="calcImpedance()">⚡ 计算</button>
-        <button class="btn btn-success" id="btn-save" onclick="saveRecord()" disabled>💾 保存</button>
+        <button class="btn btn-success" id="btn-save" onclick="saveRecord()" disabled>💾 保存到云端</button>
         <button class="btn btn-warning" onclick="clearForm()">🔄 清空</button>
       </div>
+      <div class="sync-status" id="calc-sync-status"></div>
     </div>
 
     <div class="card result-section" id="result-card" style="display:none">
@@ -127,10 +137,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       <div class="card-title">
         <span>阻抗列表</span>
         <div class="tool-bar">
-          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="saveToFile()">💾 保存到本地</button>
-          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="loadFromFile()">📂 从本地加载</button>
-          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="exportJSON()">📦 导出</button>
-          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="showImportModal()">📥 导入</button>
+          <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="refreshList()">🔄 刷新</button>
           <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="exportCSV()">📊 Excel</button>
           <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 10px" onclick="openChangePasswordModal()">🔑 修改密码</button>
         </div>
@@ -146,6 +153,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
         </table>
         <div class="empty-tip" id="empty-tip">暂无数据，请先在「阻抗计算」页面计算并保存</div>
       </div>
+      <div class="sync-status" id="list-sync-status"></div>
     </div>
   </div>
 </div>
@@ -163,15 +171,15 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
   </div>
 </div>
 
-<!-- 导出弹窗（复制用） -->
+<!-- 导出数据弹窗 -->
 <div class="modal-overlay" id="modal-export">
   <div class="modal">
     <h3>导出数据</h3>
     <p style="font-size:12px;color:#888">复制下方内容，发送给对方后对方点击「导入」粘贴</p>
     <textarea id="inp-export-data" readonly></textarea>
     <div class="btn-row" style="margin-top:12px">
-      <button class="btn btn-outline" onclick="copyExportData()">📋 复制</button>
       <button class="btn btn-primary" style="background:#999" onclick="closeExportModal()">关闭</button>
+      <button class="btn btn-success" onclick="copyExportData()">📋 复制</button>
     </div>
   </div>
 </div>
@@ -192,8 +200,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div class="modal-overlay" id="modal-note">
   <div class="modal">
     <h3>编辑备注</h3>
-    <textarea id="inp-note" style="margin-bottom:12px;font-family:inherit;height:70px"></textarea>
-    <div class="btn-row">
+    <textarea id="inp-note" placeholder="输入备注信息..."></textarea>
+    <div class="btn-row" style="margin-top:12px">
       <button class="btn btn-primary" style="background:#999" onclick="closeNoteModal()">取消</button>
       <button class="btn btn-success" onclick="saveNote()">保存</button>
     </div>
@@ -204,11 +212,11 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div class="modal-overlay" id="modal-password">
   <div class="modal">
     <h3>密码验证</h3>
-    <p style="margin-bottom:12px;color:#666">请输入操作密码以继续</p>
-    <input type="password" id="inp-password" placeholder="请输入密码" style="width:100%;height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none;margin-bottom:12px">
+    <p>请输入密码以执行此操作</p>
+    <input type="password" id="inp-password" placeholder="请输入密码" style="width:100%;height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none;margin:12px 0">
     <div class="btn-row">
       <button class="btn btn-primary" style="background:#999" onclick="closePasswordModal()">取消</button>
-      <button class="btn btn-danger" onclick="confirmPasswordAction()">确认</button>
+      <button class="btn btn-success" onclick="confirmPasswordAction()">确认</button>
     </div>
   </div>
 </div>
@@ -217,19 +225,12 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div class="modal-overlay" id="modal-change-password">
   <div class="modal">
     <h3>修改密码</h3>
-    <div style="margin-bottom:10px">
-      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">当前密码</label>
-      <input type="password" id="inp-old-password" placeholder="请输入当前密码" style="width:100%;height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <input type="password" id="inp-old-password" placeholder="当前密码" style="height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none">
+      <input type="password" id="inp-new-password" placeholder="新密码" style="height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none">
+      <input type="password" id="inp-confirm-password" placeholder="确认新密码" style="height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none">
     </div>
-    <div style="margin-bottom:10px">
-      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">新密码</label>
-      <input type="password" id="inp-new-password" placeholder="请输入新密码" style="width:100%;height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none">
-    </div>
-    <div style="margin-bottom:12px">
-      <label style="font-size:12px;color:#555;display:block;margin-bottom:4px">确认新密码</label>
-      <input type="password" id="inp-confirm-password" placeholder="请再次输入新密码" style="width:100%;height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none">
-    </div>
-    <div class="btn-row">
+    <div class="btn-row" style="margin-top:12px">
       <button class="btn btn-primary" style="background:#999" onclick="closeChangePasswordModal()">取消</button>
       <button class="btn btn-success" onclick="saveNewPassword()">保存</button>
     </div>
@@ -239,62 +240,113 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== 数据存储（支持多种存储方式） =====
+// ===== Supabase 配置 =====
+const SUPABASE_URL = 'https://aukfceqljzmmejcwuxjw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_cOHk8pJjCoNIChTR4f_f9g_XiKnLK8f';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ===== 全局状态 =====
 let store = [];
-let STORAGE_KEY = 'wire_imp_v3';
-let STORAGE_MODE = localStorage.getItem('wire_imp_storage_mode') || 'localStorage'; // localStorage | sessionStorage | cookie
+let _pendingPasswordAction = null;
+let _noteIdx = null;
 
-function setStorageMode(mode) {
-  STORAGE_MODE = mode;
-  localStorage.setItem('wire_imp_storage_mode', mode);
-  initStorage();
-  renderList();
-  toast('存储方式已切换为：' + {localStorage:'本地持久化',sessionStorage:'会话临时',cookie:'Cookie存储'}[mode], 'success');
+// ===== Supabase 数据操作 =====
+async function fetchFromCloud() {
+  const { data, error } = await supabase.from('wire_records').select('*').order('created_at', { ascending: false });
+  if (error) {
+    console.error('Fetch error:', error);
+    toast('云端同步失败: ' + error.message, 'error');
+    return [];
+  }
+  return data || [];
 }
 
-function getStorageKey() {
-  return STORAGE_KEY + '_' + STORAGE_MODE;
+async function saveToCloud(record) {
+  const { data: existing } = await supabase.from('wire_records').select('id').eq('code', record.code).single();
+  
+  if (existing) {
+    // 更新
+    const { error } = await supabase.from('wire_records').update({
+      dia: record.dia, core: record.core, len: record.len, area: record.area,
+      tin_r: record.tinR, host_weld_r: record.hostWeldR, dev_weld_r: record.devWeldR,
+      final_r: record.finalR, control_r: record.controlR, note: record.note || '',
+      updated_at: new Date().toISOString()
+    }).eq('code', record.code);
+    if (error) throw error;
+    return { action: 'updated', id: existing.id };
+  } else {
+    // 插入
+    const { data: inserted, error } = await supabase.from('wire_records').insert([{
+      code: record.code, dia: record.dia, core: record.core, len: record.len,
+      area: record.area, tin_r: record.tinR, host_weld_r: record.hostWeldR,
+      dev_weld_r: record.devWeldR, final_r: record.finalR, control_r: record.controlR,
+      note: record.note || '', created_at: record.createdAt, updated_at: new Date().toISOString()
+    }]).select().single();
+    if (error) throw error;
+    return { action: 'inserted', id: inserted.id };
+  }
 }
 
-function getItem(key) {
+async function deleteFromCloud(code) {
+  const { error } = await supabase.from('wire_records').delete().eq('code', code);
+  if (error) throw error;
+}
+
+async function clearAllFromCloud() {
+  const { error } = await supabase.from('wire_records').delete().neq('id', 0);
+  if (error) throw error;
+}
+
+// ===== 本地缓存管理 =====
+function setLocalCache(data) {
+  localStorage.setItem('wire_imp_cloud_cache', JSON.stringify(data));
+  localStorage.setItem('wire_imp_cache_time', Date.now().toString());
+}
+
+function getLocalCache() {
   try {
-    if (STORAGE_MODE === 'localStorage') {
-      return localStorage.getItem(key);
-    } else if (STORAGE_MODE === 'sessionStorage') {
-      return sessionStorage.getItem(key);
-    } else if (STORAGE_MODE === 'cookie') {
-      const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'));
-      return match ? decodeURIComponent(match[2]) : null;
+    const data = localStorage.getItem('wire_imp_cloud_cache');
+    const time = localStorage.getItem('wire_imp_cache_time');
+    if (data && time && Date.now() - parseInt(time) < 5 * 60 * 1000) {
+      return JSON.parse(data);
     }
   } catch(e) {}
   return null;
 }
 
-function setItem(key, value) {
+// ===== 初始化 =====
+async function initApp() {
+  // 尝试从本地缓存加载
+  const cached = getLocalCache();
+  if (cached) {
+    store = cached;
+    renderList();
+  }
+  
+  // 从云端同步
+  showSyncStatus('syncing');
   try {
-    if (STORAGE_MODE === 'localStorage') {
-      localStorage.setItem(key, value);
-    } else if (STORAGE_MODE === 'sessionStorage') {
-      sessionStorage.setItem(key, value);
-    } else if (STORAGE_MODE === 'cookie') {
-      const expires = new Date(Date.now() + 365*24*60*60*1000).toUTCString();
-      document.cookie = key + '=' + encodeURIComponent(value) + '; expires=' + expires + '; path=/';
-    }
-  } catch(e) {}
-}
-
-function initStorage(){
-  const saved = getItem(getStorageKey());
-  if(saved){
-    try { store = JSON.parse(saved); }
-    catch(e){ store = []; }
+    const cloudData = await fetchFromCloud();
+    store = cloudData.map(row => ({
+      code: row.code, dia: row.dia, core: row.core, len: row.len, area: row.area,
+      tinR: row.tin_r, hostWeldR: row.host_weld_r, devWeldR: row.dev_weld_r,
+      finalR: row.final_r, controlR: row.control_r, note: row.note || '',
+      createdAt: row.created_at?.slice(0,10) || today()
+    }));
+    setLocalCache(store);
+    renderList();
+    showSyncStatus('synced');
+  } catch(e) {
+    showSyncStatus('error');
   }
 }
-function loadData(){ return store; }
-function saveStore(arr){
-  if(arr !== undefined) store = arr;
-  else store = loadData();
-  setItem(getStorageKey(), JSON.stringify(store));
+
+function showSyncStatus(status) {
+  const el = document.getElementById('list-sync-status');
+  if (!el) return;
+  const msgs = { syncing: '⏳ 同步中...', synced: '✅ 已同步云端', error: '❌ 同步失败' };
+  el.className = 'sync-status ' + status;
+  el.textContent = msgs[status] || '';
 }
 
 // ===== 页面切换 =====
@@ -333,65 +385,44 @@ function calcImpedance(){
   const controlR=Math.round(finalR*1.05);
 
   window._cache={code,dia,core,len,hostR,devR,area,tinR,hostWeldR,devWeldR,finalR,controlR};
-
+  
   document.getElementById('result-body').innerHTML=`<tr>
-    <td>${area.toFixed(4)}</td>
-    <td>${Math.round(dcR)}</td>
-    <td>${tinR}</td>
-    <td>${hostWeldR}</td>
-    <td>${devWeldR}</td>
-    <td>${finalR}</td>
-    <td class="hl">${controlR}</td>
+    <td>${area.toFixed(4)}</td><td>${dcR.toFixed(4)}</td><td class="hl">${tinR}</td>
+    <td>${hostWeldR}</td><td>${devWeldR}</td><td>${finalR}</td><td class="hl">${controlR}</td>
   </tr>`;
   document.getElementById('result-card').style.display='block';
   document.getElementById('btn-save').disabled=false;
 }
 
-// ===== 保存 =====
-function saveRecord(){
-  if(!window._cache){console.log('saveRecord: no cache');return;}
+// ===== 保存到云端 =====
+async function saveRecord(){
+  if(!window._cache){toast('请先计算','error');return;}
   const c=window._cache;
   const code=document.getElementById('inp-code').value.trim();
   if(!code){toast('请输入线材编码后再保存','error');return}
   
-  console.log('saveRecord: cache=', c);
-  const list=loadData();
-  console.log('saveRecord: current list=', list);
-  const idx=list.findIndex(d=>d.code===c.code);
   const rec={
-    code:code,
-    dia:c.dia,
-    core:c.core,
-    len:c.len,
-    area:c.area,
-    tinR:c.tinR,
-    hostWeldR:c.hostWeldR,
-    devWeldR:c.devWeldR,
-    finalR:c.finalR,
-    controlR:c.controlR,
-    note:'',
-    createdAt:today()
+    code:code, dia:c.dia, core:c.core, len:c.len, area:c.area,
+    tinR:c.tinR, hostWeldR:c.hostWeldR, devWeldR:c.devWeldR,
+    finalR:c.finalR, controlR:c.controlR, note:'', createdAt:today()
   };
-  console.log('saveRecord: new record=', rec);
   
-  if(idx>=0){
-    // 重复编码，询问是否替换
-    showModal('编码已存在',`线材编码「${code}」已存在于列表中。是否删除原记录并保存新记录？`,()=>{
-      console.log('saveRecord: replacing record');
-      list.splice(idx,1);
-      list.push(rec);
-      saveStore();
-      document.getElementById('btn-save').disabled=true;
-      toast('已替换：'+code,'success');
-      console.log('saveRecord: list after replace=', loadData());
-    });
-  } else {
-    console.log('saveRecord: adding new record');
-    list.push(rec);
-    saveStore();
+  try {
+    const result = await saveToCloud(rec);
     document.getElementById('btn-save').disabled=true;
-    toast('已保存：'+code,'success');
-    console.log('saveRecord: list after add=', loadData());
+    toast(result.action === 'inserted' ? '已保存到云端：'+code : '已更新云端：'+code, 'success');
+    
+    // 更新本地缓存
+    const idx = store.findIndex(d => d.code === code);
+    if (idx >= 0) {
+      store[idx] = {...store[idx], ...rec};
+    } else {
+      store.push(rec);
+    }
+    setLocalCache(store);
+    renderList();
+  } catch(e) {
+    toast('保存失败：'+e.message, 'error');
   }
 }
 
@@ -407,26 +438,14 @@ function clearForm(){
 
 // ===== 渲染列表 =====
 function renderList(){
-  console.log('renderList: called');
-  const data=loadData();
-  console.log('renderList: loaded data=', data);
-  console.log('renderList: data length=', data.length);
+  const data=store;
   const kw=document.getElementById('inp-search').value.trim().toLowerCase();
-  console.log('renderList: search kw=', kw);
   const filtered=kw?data.filter(d=>d.code.toLowerCase().includes(kw)):data;
-  console.log('renderList: filtered=', filtered);
   const tbody=document.getElementById('list-body');
   const empty=document.getElementById('empty-tip');
-  console.log('renderList: tbody exists=', !!tbody, 'empty exists=', !!empty);
-  if(!filtered.length){
-    console.log('renderList: no data, showing empty');
-    tbody.innerHTML='';
-    empty.style.display='block';
-    return;
-  }
-  console.log('renderList: showing', filtered.length, 'rows');
+  if(!filtered.length){tbody.innerHTML='';empty.style.display='block';return}
   empty.style.display='none';
-  const html = filtered.map((d,i)=>{
+  tbody.innerHTML=filtered.map((d,i)=>{
     const ri=data.indexOf(d);
     return`<tr>
       <td>${i+1}</td><td><strong>${esc(d.code)}</strong></td>
@@ -440,16 +459,31 @@ function renderList(){
       </div></td>
     </tr>`;
   }).join('');
-  console.log('renderList: generated HTML length=', html.length);
-  tbody.innerHTML = html;
-  console.log('renderList: set tbody.innerHTML');
-  console.log('renderList: tbody children count=', tbody.children.length);
-  console.log('renderList: done');
+}
+
+// ===== 刷新列表 =====
+async function refreshList() {
+  showSyncStatus('syncing');
+  try {
+    const cloudData = await fetchFromCloud();
+    store = cloudData.map(row => ({
+      code: row.code, dia: row.dia, core: row.core, len: row.len, area: row.area,
+      tinR: row.tin_r, hostWeldR: row.host_weld_r, devWeldR: row.dev_weld_r,
+      finalR: row.final_r, controlR: row.control_r, note: row.note || '',
+      createdAt: row.created_at?.slice(0,10) || today()
+    }));
+    setLocalCache(store);
+    renderList();
+    showSyncStatus('synced');
+    toast('已刷新 '+store.length+' 条数据', 'success');
+  } catch(e) {
+    showSyncStatus('error');
+    toast('刷新失败', 'error');
+  }
 }
 
 // ===== 密码验证 =====
 let PASSWORD_KEY = 'wire_imp_password';
-let _pendingPasswordAction = null;
 
 function getPassword() {
   try {
@@ -485,25 +519,45 @@ function saveNewPassword() {
     toast('当前密码错误', 'error');
     return;
   }
-  
   if (!newPwd) {
     toast('新密码不能为空', 'error');
     return;
   }
-  
   if (newPwd.length < 4) {
     toast('密码长度至少4位', 'error');
     return;
   }
-  
   if (newPwd !== confirmPwd) {
     toast('两次输入的密码不一致', 'error');
     return;
   }
-  
   setPassword(newPwd);
   closeChangePasswordModal();
   toast('密码修改成功', 'success');
+}
+
+function requestPassword(action) {
+  _pendingPasswordAction = action;
+  document.getElementById('inp-password').value = '';
+  document.getElementById('modal-password').classList.add('show');
+  document.getElementById('inp-password').focus();
+}
+
+function closePasswordModal() {
+  document.getElementById('modal-password').classList.remove('show');
+}
+
+function confirmPasswordAction() {
+  const input = document.getElementById('inp-password').value.trim();
+  if (input === getPassword()) {
+    const action = _pendingPasswordAction;
+    closePasswordModal();
+    if (action) action();
+  } else {
+    toast('密码错误', 'error');
+    document.getElementById('inp-password').value = '';
+    document.getElementById('inp-password').focus();
+  }
 }
 
 // 回车支持
@@ -516,110 +570,110 @@ document.getElementById('inp-new-password')?.addEventListener('keydown', e => {
 document.getElementById('inp-confirm-password')?.addEventListener('keydown', e => {
   if (e.key === 'Enter') saveNewPassword();
 });
-
-function requestPassword(action) {
-  _pendingPasswordAction = action;
-  document.getElementById('inp-password').value = '';
-  document.getElementById('modal-password').classList.add('show');
-  document.getElementById('inp-password').focus();
-}
-
-function closePasswordModal() {
-  document.getElementById('modal-password').classList.remove('show');
-  // 注意：不在这里清空 _pendingPasswordAction，以免在回调执行前被清空
-}
-
-function confirmPasswordAction() {
-  const input = document.getElementById('inp-password').value.trim();
-  console.log('confirmPasswordAction called, input:', input, 'expected:', getPassword());
-  if (input === getPassword()) {
-    console.log('password match, executing action');
-    const action = _pendingPasswordAction;
-    closePasswordModal();
-    if (action) {
-      console.log('executing pending action');
-      action();
-    } else {
-      console.log('no pending action!');
-    }
-  } else {
-    toast('密码错误', 'error');
-    document.getElementById('inp-password').value = '';
-    document.getElementById('inp-password').focus();
-  }
-}
-
-// 支持回车确认密码
 document.getElementById('inp-password').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') confirmPasswordAction();
 });
 
 // ===== 备注 =====
-let _noteIdx = null;
 function editNote(i) {
   requestPassword(() => {
     _noteIdx = i;
-    document.getElementById('inp-note').value = loadData()[i].note || '';
+    document.getElementById('inp-note').value = store[i].note || '';
     document.getElementById('modal-note').classList.add('show');
   });
 }
 function closeNoteModal() { document.getElementById('modal-note').classList.remove('show'); _noteIdx = null; }
-function saveNote() {
+async function saveNote() {
   if (_noteIdx === null) return;
-  const d = loadData();
-  d[_noteIdx].note = document.getElementById('inp-note').value.trim();
-  saveStore();
+  store[_noteIdx].note = document.getElementById('inp-note').value.trim();
+  setLocalCache(store);
+  
+  // 同步到云端
+  const { error } = await supabase.from('wire_records').update({
+    note: store[_noteIdx].note,
+    updated_at: new Date().toISOString()
+  }).eq('code', store[_noteIdx].code);
+  
+  if (error) toast('备注同步失败', 'error');
   closeNoteModal();
   renderList();
   toast('备注已更新', 'success');
 }
 
 // ===== 删除 =====
-function delRecord(i) {
-  console.log('delRecord called with index:', i);
-  const d = loadData(), item = d[i];
-  console.log('item to delete:', item);
+async function delRecord(i) {
+  const item = store[i];
   requestPassword(() => {
-    console.log('password confirmed, showing confirm dialog');
-    showModal('确认删除', `确定删除「${item.code}」？`, () => {
-      console.log('confirming deletion');
-      d.splice(i, 1);
-      saveStore();
-      renderList();
-      toast('已删除：' + item.code, 'success');
+    showModal('确认删除', `确定删除「${item.code}」？`, async () => {
+      try {
+        await deleteFromCloud(item.code);
+        store.splice(i, 1);
+        setLocalCache(store);
+        renderList();
+        toast('已从云端删除：'+item.code, 'success');
+      } catch(e) {
+        toast('删除失败：'+e.message, 'error');
+      }
     });
   });
 }
+
 function confirmClearAll(){
-  const d=loadData();
-  if(!d.length){toast('列表已为空','error');return}
-  showModal('清空全部',`确定清空全部 ${d.length} 条记录？`,()=>{saveStore([]);renderList();toast('已全部清空','success')});
+  if(!store.length){toast('列表已为空','error');return}
+  showModal('清空全部',`确定清空全部 ${store.length} 条记录？`,async()=>{
+    try {
+      await clearAllFromCloud();
+      store = [];
+      setLocalCache(store);
+      renderList();
+      toast('已全部清空','success');
+    } catch(e) {
+      toast('清空失败：'+e.message, 'error');
+    }
+  });
 }
 
 // ===== 导入/导出 =====
 function exportJSON(){
-  const data=loadData();
-  if(!data.length){toast('暂无数据','error');return}
-  document.getElementById('inp-export-data').value=JSON.stringify(data,null,2);
+  if(!store.length){toast('暂无数据','error');return}
+  document.getElementById('inp-export-data').value=JSON.stringify(store,null,2);
   document.getElementById('modal-export').classList.add('show');
 }
 function showImportModal(){document.getElementById('inp-import-data').value='';document.getElementById('modal-import').classList.add('show')}
 function closeImportModal(){document.getElementById('modal-import').classList.remove('show')}
-function doImport(){
+async function doImport(){
   const raw=document.getElementById('inp-import-data').value.trim();
   if(!raw){toast('请先粘贴数据','error');return}
   try{
     const imported=JSON.parse(raw);
     if(!Array.isArray(imported)){toast('格式错误，需为JSON数组','error');return}
-    const existing=loadData();
     let merged=0,added=0;
-    imported.forEach(item=>{
-      const ex=existing.findIndex(d=>d.code===item.code);
-      if(ex>=0){existing[ex]={...existing[ex],...item};merged++}
-      else{existing.push(item);added++}
-    });
-    saveStore(existing);
-    closeImportModal();renderList();
+    for (const item of imported) {
+      try {
+        const existing = await supabase.from('wire_records').select('id').eq('code', item.code).single();
+        if (existing.data) {
+          await supabase.from('wire_records').update({
+            dia: item.dia, core: item.core, len: item.len, area: item.area,
+            tin_r: item.tinR, host_weld_r: item.hostWeldR, dev_weld_r: item.devWeldR,
+            final_r: item.finalR, control_r: item.controlR, note: item.note || '',
+            updated_at: new Date().toISOString()
+          }).eq('code', item.code);
+          merged++;
+        } else {
+          await supabase.from('wire_records').insert([{
+            code: item.code, dia: item.dia, core: item.core, len: item.len,
+            area: item.area, tin_r: item.tinR, host_weld_r: item.hostWeldR,
+            dev_weld_r: item.devWeldR, final_r: item.finalR, control_r: item.controlR,
+            note: item.note || '', created_at: item.createdAt || new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
+          added++;
+        }
+      } catch(e) { console.error('Import error:', e); }
+    }
+    // 重新拉取
+    await refreshList();
+    closeImportModal();
     toast(`导入完成：新增${added}条 更新${merged}条`,'success');
   }catch(e){toast('解析失败，请检查数据格式','error')}
 }
@@ -632,23 +686,21 @@ function copyExportData(){
 function closeExportModal(){document.getElementById('modal-export').classList.remove('show')}
 
 function exportCSV(){
-  const data=loadData();
-  if(!data.length){toast('暂无数据','error');return}
+  if(!store.length){toast('暂无数据','error');return}
   const BOM='\uFEFF';
-  const header='序号,线材编码,线径,芯数,线长,截面积,沾锡后阻抗,焊接主机端阻抗,焊接设备端阻抗,成品阻抗,管控阻抗,备注,创建日期\n';
-  const rows=data.map((d,i)=>`${i+1},"${d.code}",${d.dia},${d.core},${d.len},${d.area.toFixed(4)},${d.tinR},${d.hostWeldR},${d.devWeldR},${d.finalR},${d.controlR},"${(d.note||'').replace(/"/g,'""')}",${d.createdAt||today()}`).join('\n')+'\n';
+  const header='序号,线材编码,线径,芯数,线长,截面积,线材阻抗单芯,焊接主机端阻抗,焊接设备端阻抗,成品阻抗,管控阻抗,备注,创建日期\n';
+  const rows=store.map((d,i)=>`${i+1},"${d.code}",${d.dia},${d.core},${d.len},${d.area.toFixed(4)},${d.tinR},${d.hostWeldR},${d.devWeldR},${d.finalR},${d.controlR},"${(d.note||'').replace(/"/g,'""')}",${d.createdAt||today()}`).join('\n')+'\n';
   const blob=new Blob([BOM+header+rows],{type:'text/csv;charset=utf-8'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`阻抗列表_${today()}.csv`;
   a.click();URL.revokeObjectURL(url);
-  toast(`已导出 ${data.length} 条`,'success');
+  toast(`已导出 ${store.length} 条`,'success');
 }
 
 // ===== 本地文件保存/加载 =====
 function saveToFile(){
-  const data=loadData();
-  if(!data.length){toast('暂无数据可保存','error');return}
-  const json=JSON.stringify(data,null,2);
+  if(!store.length){toast('暂无数据可保存','error');return}
+  const json=JSON.stringify(store,null,2);
   const blob=new Blob([json],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
@@ -658,7 +710,7 @@ function saveToFile(){
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  toast(`已保存 ${data.length} 条数据到本地`,'success');
+  toast(`已保存 ${store.length} 条数据到本地`,'success');
 }
 
 function loadFromFile(){
@@ -673,16 +725,32 @@ function loadFromFile(){
       try{
         const data=JSON.parse(ev.target.result);
         if(!Array.isArray(data)){toast('文件格式错误','error');return}
-        showModal('确认加载',`将加载 ${data.length} 条数据，是否合并到现有数据？`,()=>{
-          const existing=loadData();
+        showModal('确认加载',`将加载 ${data.length} 条数据，是否合并到云端数据？`,async()=>{
           let merged=0,added=0;
-          data.forEach(item=>{
-            const ex=existing.findIndex(d=>d.code===item.code);
-            if(ex>=0){existing[ex]={...existing[ex],...item};merged++}
-            else{existing.push(item);added++}
-          });
-          saveStore(existing);
-          renderList();
+          for (const item of data) {
+            try {
+              const existing = await supabase.from('wire_records').select('id').eq('code', item.code).single();
+              if (existing.data) {
+                await supabase.from('wire_records').update({
+                  dia: item.dia, core: item.core, len: item.len, area: item.area,
+                  tin_r: item.tinR, host_weld_r: item.hostWeldR, dev_weld_r: item.devWeldR,
+                  final_r: item.finalR, control_r: item.controlR, note: item.note || '',
+                  updated_at: new Date().toISOString()
+                }).eq('code', item.code);
+                merged++;
+              } else {
+                await supabase.from('wire_records').insert([{
+                  code: item.code, dia: item.dia, core: item.core, len: item.len,
+                  area: item.area, tin_r: item.tinR, host_weld_r: item.hostWeldR,
+                  dev_weld_r: item.devWeldR, final_r: item.finalR, control_r: item.controlR,
+                  note: item.note || '', created_at: item.createdAt || new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                }]);
+                added++;
+              }
+            } catch(err) { console.error('Load error:', err); }
+          }
+          await refreshList();
           closeModal();
           toast(`加载完成：新增${added}条 更新${merged}条`,'success');
         });
@@ -703,12 +771,13 @@ function esc(s){const d=document.createElement('div');d.textContent=s;return d.i
 function today(){return new Date().toISOString().slice(0,10)}
 
 // ===== 初始化 =====
-initStorage();
-
 document.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&e.ctrlKey)calcImpedance();
-  if(e.key==='Escape'){closeModal();closeNoteModal();closeImportModal();closeExportModal()}
+  if(e.key==='Escape'){closeModal();closeNoteModal();closeImportModal();closeExportModal();closePasswordModal();closeChangePasswordModal()}
 });
+
+// 启动
+initApp();
 
 // iOS: 防止双击缩放导致的输入框聚焦丢失
 document.addEventListener('touchstart',function(e){}, {passive:true});
