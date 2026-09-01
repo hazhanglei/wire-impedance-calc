@@ -106,6 +106,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
         <div class="form-group"><label>线长 <span>*</span></label><div class="unit" data-unit="m"><input type="number" id="inp-len" step="0.01" min="0" placeholder="如：0.5"></div></div>
         <div class="form-group"><label>主机端阻抗 <span>*</span></label><div class="unit" data-unit="mΩ"><input type="number" id="inp-host-r" step="1" min="0" value="30" placeholder="如：30"></div></div>
         <div class="form-group"><label>设备端阻抗 <span>*</span></label><div class="unit" data-unit="mΩ"><input type="number" id="inp-dev-r" step="1" min="0" value="20" placeholder="如：20"></div></div>
+        <div class="form-group"><label>载流</label><input type="text" id="inp-current" readonly placeholder="计算后显示" style="background:#f5f5f5"></div>
+        <div class="form-group"><label>最大电流</label><input type="text" id="inp-max-current" readonly placeholder="计算后显示" style="background:#f5f5f5"></div>
       </div>
       <div class="formula-note">
         <strong>计算公式：</strong><br>
@@ -125,7 +127,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
     <div class="card result-section" id="result-card" style="display:none">
       <div class="card-title">计算结果</div>
       <table class="result-table">
-        <thead><tr><th>截面积(mm²)</th><th>直流阻抗(mΩ)</th><th>线材阻抗单芯(mΩ)</th><th>焊接主机端(mΩ)</th><th>焊接设备端(mΩ)</th><th>成品(mΩ)</th><th class="hl">管控(mΩ)</th></tr></thead>
+        <thead><tr><th>截面积(mm²)</th><th>直流阻抗(mΩ)</th><th>线材阻抗单芯(mΩ)</th><th>焊接主机端(mΩ)</th><th>焊接设备端(mΩ)</th><th>成品(mΩ)</th><th class="hl">管控(mΩ)</th><th>电流(A)</th><th>最大电流(A)</th></tr></thead>
         <tbody id="result-body"></tbody>
       </table>
     </div>
@@ -148,7 +150,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>#</th><th>编码</th><th>线径(mm)</th><th>芯数</th><th>线长(m)</th><th>截面积(mm²)</th><th>线材阻抗单芯(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>备注</th><th>操作</th></tr></thead>
+          <thead><tr><th>#</th><th>编码</th><th>线径(mm)</th><th>芯数</th><th>线长(m)</th><th>截面积(mm²)</th><th>线材阻抗单芯(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>电流(A)</th><th>最大电流(A)</th><th>备注</th><th>操作</th></tr></thead>
           <tbody id="list-body"></tbody>
         </table>
         <div class="empty-tip" id="empty-tip">暂无数据，请先在「阻抗计算」页面计算并保存</div>
@@ -275,7 +277,8 @@ async function saveToCloud(record) {
     const { error } = await sbClient.from('wire_records').update({
       dia: record.dia, core: record.core, len: record.len, area: record.area,
       tin_r: record.tinR, host_weld_r: record.hostWeldR, dev_weld_r: record.devWeldR,
-      final_r: record.finalR, control_r: record.controlR, note: record.note || '',
+      final_r: record.finalR, control_r: record.controlR, current: record.current,
+      max_current: record.maxCurrent, note: record.note || '',
       updated_at: new Date().toISOString()
     }).eq('code', record.code);
     if (error) throw error;
@@ -286,6 +289,7 @@ async function saveToCloud(record) {
       code: record.code, dia: record.dia, core: record.core, len: record.len,
       area: record.area, tin_r: record.tinR, host_weld_r: record.hostWeldR,
       dev_weld_r: record.devWeldR, final_r: record.finalR, control_r: record.controlR,
+      current: record.current, max_current: record.maxCurrent,
       note: record.note || '', created_at: record.createdAt, updated_at: new Date().toISOString()
     }]).select().single();
     if (error) throw error;
@@ -336,8 +340,8 @@ async function initApp() {
     store = cloudData.map(row => ({
       code: row.code, dia: row.dia, core: row.core, len: row.len, area: row.area,
       tinR: row.tin_r, hostWeldR: row.host_weld_r, devWeldR: row.dev_weld_r,
-      finalR: row.final_r, controlR: row.control_r, note: row.note || '',
-      createdAt: row.created_at?.slice(0,10) || today()
+      finalR: row.final_r, controlR: row.control_r, current: row.current, maxCurrent: row.max_current,
+      note: row.note || '', createdAt: row.created_at?.slice(0,10) || today()
     }));
     setLocalCache(store);
     renderList();
@@ -389,47 +393,58 @@ function calcImpedance(){
   const devWeldR=Math.round(devR*1.15+tinR*2);
   const finalR=Math.round(tinR*2+hostR*1.15+devR*1.15);
   const controlR=Math.round(finalR*1.05);
+  const current=parseFloat((area*5).toFixed(2));
+  const maxCurrent=parseFloat((area*10).toFixed(2));
 
-  window._cache={code,dia,core,len,hostR,devR,area,tinR,hostWeldR,devWeldR,finalR,controlR};
+  window._cache={code,dia,core,len,hostR,devR,area,tinR,hostWeldR,devWeldR,finalR,controlR,current,maxCurrent};
+  
+  // 显示载流信息
+  document.getElementById('inp-current').value=current+'A';
+  document.getElementById('inp-max-current').value=maxCurrent+'A';
   
   document.getElementById('result-body').innerHTML=`<tr>
     <td>${area.toFixed(4)}</td><td>${dcR.toFixed(4)}</td><td class="hl">${tinR}</td>
     <td>${hostWeldR}</td><td>${devWeldR}</td><td>${finalR}</td><td class="hl">${controlR}</td>
+    <td>${current}</td><td>${maxCurrent}</td>
   </tr>`;
   document.getElementById('result-card').style.display='block';
   document.getElementById('btn-save').disabled=false;
 }
 
-// ===== 保存到云端 =====
+// ===== 保存到云端（需密码验证） =====
 async function saveRecord(){
   if(!window._cache){toast('请先计算','error');return;}
   const c=window._cache;
   const code=document.getElementById('inp-code').value.trim();
   if(!code){toast('请输入线材编码后再保存','error');return}
   
-  const rec={
-    code:code, dia:c.dia, core:c.core, len:c.len, area:c.area,
-    tinR:c.tinR, hostWeldR:c.hostWeldR, devWeldR:c.devWeldR,
-    finalR:c.finalR, controlR:c.controlR, note:'', createdAt:today()
-  };
-  
-  try {
-    const result = await saveToCloud(rec);
-    document.getElementById('btn-save').disabled=true;
-    toast(result.action === 'inserted' ? '已保存到云端：'+code : '已更新云端：'+code, 'success');
+  // 密码验证
+  requestPassword(async()=>{
+    const rec={
+      code:code, dia:c.dia, core:c.core, len:c.len, area:c.area,
+      tinR:c.tinR, hostWeldR:c.hostWeldR, devWeldR:c.devWeldR,
+      finalR:c.finalR, controlR:c.controlR, current:c.current, maxCurrent:c.maxCurrent,
+      note:'', createdAt:today()
+    };
     
-    // 更新本地缓存
-    const idx = store.findIndex(d => d.code === code);
-    if (idx >= 0) {
-      store[idx] = {...store[idx], ...rec};
-    } else {
-      store.push(rec);
+    try {
+      const result = await saveToCloud(rec);
+      document.getElementById('btn-save').disabled=true;
+      toast(result.action === 'inserted' ? '已保存到云端：'+code : '已更新云端：'+code, 'success');
+      
+      // 更新本地缓存
+      const idx = store.findIndex(d => d.code === code);
+      if (idx >= 0) {
+        store[idx] = {...store[idx], ...rec};
+      } else {
+        store.push(rec);
+      }
+      setLocalCache(store);
+      renderList();
+    } catch(e) {
+      toast('保存失败：'+e.message, 'error');
     }
-    setLocalCache(store);
-    renderList();
-  } catch(e) {
-    toast('保存失败：'+e.message, 'error');
-  }
+  });
 }
 
 // ===== 清空表单 =====
@@ -458,6 +473,7 @@ function renderList(){
       <td>${d.dia}</td><td>${d.core}</td><td>${d.len}</td><td>${d.area.toFixed(4)}</td>
       <td>${d.tinR}</td><td>${d.hostWeldR}</td><td>${d.devWeldR}</td>
       <td>${d.finalR}</td><td class="hl">${d.controlR}</td>
+      <td>${d.current||'-'}</td><td>${d.maxCurrent||'-'}</td>
       <td title="${esc(d.note||'')}">${esc((d.note||'').slice(0,12))}${(d.note||'').length>12?'…':''}</td>
       <td><div class="action-btns">
         <button class="btn-sm" style="background:#e3f2fd;color:#1565c0" onclick="editNote(${ri})">备注</button>
@@ -475,8 +491,8 @@ async function refreshList() {
     store = cloudData.map(row => ({
       code: row.code, dia: row.dia, core: row.core, len: row.len, area: row.area,
       tinR: row.tin_r, hostWeldR: row.host_weld_r, devWeldR: row.dev_weld_r,
-      finalR: row.final_r, controlR: row.control_r, note: row.note || '',
-      createdAt: row.created_at?.slice(0,10) || today()
+      finalR: row.final_r, controlR: row.control_r, current: row.current, maxCurrent: row.max_current,
+      note: row.note || '', createdAt: row.created_at?.slice(0,10) || today()
     }));
     setLocalCache(store);
     renderList();
