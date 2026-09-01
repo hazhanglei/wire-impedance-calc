@@ -164,7 +164,6 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
             <th style="width:55px">设备端</th>
             <th style="width:50px">成品</th>
             <th style="width:50px">管控</th>
-            <th>备注</th>
             <th style="width:60px">操作</th>
           </tr></thead>
           <tbody id="list-body"></tbody>
@@ -492,7 +491,6 @@ function renderList(){
       <td>${d.finalR}</td><td class="hl">${d.controlR}</td>
       <td title="${esc(d.note||'')}">${esc((d.note||'').slice(0,12))}${(d.note||'').length>12?'…':''}</td>
       <td><div class="action-btns">
-        <button class="btn-sm" style="background:#e3f2fd;color:#1565c0" onclick="editNote(${ri})">备注</button>
         <button class="btn-sm" style="background:#ffebee;color:#c62828" onclick="delRecord(${ri})">删除</button>
       </div></td>
     </tr>`;
