@@ -46,9 +46,9 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .search-bar input{flex:1;min-width:100px;height:36px;border:1px solid #d0d7de;border-radius:8px;padding:0 10px;font-size:14px;outline:none}
 .search-bar input:focus{border-color:#2d6a9f}
 .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-.data-table{width:100%;border-collapse:collapse;font-size:12px;min-width:480px}
-.data-table th{background:#1a3a5c;color:#fff;padding:8px 5px;text-align:center;white-space:nowrap;position:sticky;top:0;font-size:11px}
-.data-table td{padding:7px 5px;text-align:center;border-bottom:1px solid #eee;font-size:12px}
+.data-table{width:100%;border-collapse:collapse;font-size:11px;min-width:600px}
+.data-table th{background:#1a3a5c;color:#fff;padding:6px 3px;text-align:center;white-space:nowrap;position:sticky;top:0;font-size:10px;font-weight:500}
+.data-table td{padding:5px 3px;text-align:center;border-bottom:1px solid #eee;font-size:11px}
 .data-table tbody tr:hover{background:#f0f7ff}
 .data-table tbody tr:nth-child(even){background:#fafbfc}
 .data-table tbody tr:nth-child(even):hover{background:#f0f7ff}
@@ -150,7 +150,23 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>#</th><th>编码</th><th>线径(mm)</th><th>芯数</th><th>线长(m)</th><th>截面积(mm²)</th><th>电流(A)</th><th>最大电流(A)</th><th>线材阻抗单芯(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>备注</th><th>操作</th></tr></thead>
+          <thead><tr>
+            <th style="width:30px">#</th>
+            <th>编码</th>
+            <th style="width:50px">线径</th>
+            <th style="width:30px">芯数</th>
+            <th style="width:40px">线长</th>
+            <th style="width:55px">截面积</th>
+            <th style="width:45px">电流</th>
+            <th style="width:55px">最大电流</th>
+            <th style="width:65px">线材阻抗</th>
+            <th style="width:55px">主机端</th>
+            <th style="width:55px">设备端</th>
+            <th style="width:50px">成品</th>
+            <th style="width:50px">管控</th>
+            <th>备注</th>
+            <th style="width:60px">操作</th>
+          </tr></thead>
           <tbody id="list-body"></tbody>
         </table>
         <div class="empty-tip" id="empty-tip">暂无数据，请先在「阻抗计算」页面计算并保存</div>
