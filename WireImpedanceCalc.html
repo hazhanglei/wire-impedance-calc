@@ -57,8 +57,8 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
 .toast.show{opacity:1}.toast.success{background:rgba(39,174,96,.9)}.toast.error{background:rgba(231,76,60,.9)}
 .formula-note{background:#f7f9fc;border-left:3px solid #2d6a9f;padding:10px 12px;margin-top:10px;font-size:11px;color:#555;line-height:1.9;border-radius:0 6px 6px 0}
 .tool-bar{display:flex;gap:6px;flex-wrap:wrap}
-.action-btns{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
-.btn-sm{height:26px;padding:0 7px;font-size:11px;border:none;border-radius:5px;cursor:pointer}
+.action-btns{display:flex;gap:4px;justify-content:center}
+.btn-sm{height:26px;padding:0 7px;font-size:11px;border:none;border-radius:5px;cursor:pointer;text-align:center}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;justify-content:center;align-items:center;padding:20px}
 .modal-overlay.show{display:flex}
 .modal{background:#fff;border-radius:12px;padding:20px;max-width:420px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
@@ -164,7 +164,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
             <th style="width:55px">设备端</th>
             <th style="width:50px">成品</th>
             <th style="width:50px">管控</th>
-            <th style="width:60px">操作</th>
+            <th style="width:60px;text-align:center">操作</th>
           </tr></thead>
           <tbody id="list-body"></tbody>
         </table>
@@ -490,7 +490,7 @@ function renderList(){
       <td>${d.tinR}</td><td>${d.hostWeldR}</td><td>${d.devWeldR}</td>
       <td>${d.finalR}</td><td class="hl">${d.controlR}</td>
       <td title="${esc(d.note||'')}">${esc((d.note||'').slice(0,12))}${(d.note||'').length>12?'…':''}</td>
-      <td><div class="action-btns">
+      <td style="text-align:center"><div class="action-btns">
         <button class="btn-sm" style="background:#ffebee;color:#c62828" onclick="delRecord(${ri})">删除</button>
       </div></td>
     </tr>`;
