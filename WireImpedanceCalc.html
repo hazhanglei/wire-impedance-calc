@@ -127,7 +127,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
     <div class="card result-section" id="result-card" style="display:none">
       <div class="card-title">计算结果</div>
       <table class="result-table">
-        <thead><tr><th>截面积(mm²)</th><th>直流阻抗(mΩ)</th><th>线材阻抗单芯(mΩ)</th><th>焊接主机端(mΩ)</th><th>焊接设备端(mΩ)</th><th>成品(mΩ)</th><th class="hl">管控(mΩ)</th><th>电流(A)</th><th>最大电流(A)</th></tr></thead>
+        <thead><tr><th>截面积(mm²)</th><th>电流(A)</th><th>最大电流(A)</th><th>直流阻抗(mΩ)</th><th>线材阻抗单芯(mΩ)</th><th>焊接主机端(mΩ)</th><th>焊接设备端(mΩ)</th><th>成品(mΩ)</th><th class="hl">管控(mΩ)</th></tr></thead>
         <tbody id="result-body"></tbody>
       </table>
     </div>
@@ -150,7 +150,7 @@ body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;backgr
       </div>
       <div class="table-wrap">
         <table class="data-table">
-          <thead><tr><th>#</th><th>编码</th><th>线径(mm)</th><th>芯数</th><th>线长(m)</th><th>截面积(mm²)</th><th>线材阻抗单芯(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>电流(A)</th><th>最大电流(A)</th><th>备注</th><th>操作</th></tr></thead>
+          <thead><tr><th>#</th><th>编码</th><th>线径(mm)</th><th>芯数</th><th>线长(m)</th><th>截面积(mm²)</th><th>电流(A)</th><th>最大电流(A)</th><th>线材阻抗单芯(mΩ)</th><th>主机端(mΩ)</th><th>设备端(mΩ)</th><th>成品(mΩ)</th><th>管控(mΩ)</th><th>备注</th><th>操作</th></tr></thead>
           <tbody id="list-body"></tbody>
         </table>
         <div class="empty-tip" id="empty-tip">暂无数据，请先在「阻抗计算」页面计算并保存</div>
@@ -403,9 +403,9 @@ function calcImpedance(){
   document.getElementById('inp-max-current').value=maxCurrent+'A';
   
   document.getElementById('result-body').innerHTML=`<tr>
-    <td>${area.toFixed(4)}</td><td>${dcR.toFixed(4)}</td><td class="hl">${tinR}</td>
+    <td>${area.toFixed(4)}</td><td>${current}</td><td>${maxCurrent}</td>
+    <td>${dcR.toFixed(4)}</td><td class="hl">${tinR}</td>
     <td>${hostWeldR}</td><td>${devWeldR}</td><td>${finalR}</td><td class="hl">${controlR}</td>
-    <td>${current}</td><td>${maxCurrent}</td>
   </tr>`;
   document.getElementById('result-card').style.display='block';
   document.getElementById('btn-save').disabled=false;
@@ -471,9 +471,9 @@ function renderList(){
     return`<tr>
       <td>${i+1}</td><td><strong>${esc(d.code)}</strong></td>
       <td>${d.dia}</td><td>${d.core}</td><td>${d.len}</td><td>${d.area.toFixed(4)}</td>
+      <td>${d.current||'-'}</td><td>${d.maxCurrent||'-'}</td>
       <td>${d.tinR}</td><td>${d.hostWeldR}</td><td>${d.devWeldR}</td>
       <td>${d.finalR}</td><td class="hl">${d.controlR}</td>
-      <td>${d.current||'-'}</td><td>${d.maxCurrent||'-'}</td>
       <td title="${esc(d.note||'')}">${esc((d.note||'').slice(0,12))}${(d.note||'').length>12?'…':''}</td>
       <td><div class="action-btns">
         <button class="btn-sm" style="background:#e3f2fd;color:#1565c0" onclick="editNote(${ri})">备注</button>
